@@ -1,0 +1,21 @@
+.wp-block {} /*  (.wp-block {} ensures MT files load in Gutenberg editor) */
+
+
+/*= Seja bem-vindo ============ */
+
+/** Seja bem-vindo >> Etn event location **/
+#page-16 .etn-event-location {
+	background-color: #0B0E13: !important;
+}
+
+/** Seja bem-vindo >> Space top **/
+.wp-child-theme-bame-child .space-top {
+	color: #0B0E13 !important;
+	background-color: #0B0E13 !important;
+}
+
+/** Seja bem-vindo >> Elementor element d8252b3 (::before) **/
+#page-16 .elementor-element-d8252b3::before {
+	background-color: ;
+}
+
