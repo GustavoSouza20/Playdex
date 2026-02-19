@@ -1598,7 +1598,7 @@ trait SettingsTrait {
 						'mq_query' => !empty($mq_query) ? $mq_query : '',
 						'sectionSlug' => $section_name,
 						'selectorSlug' => $css_selector,
-						'selectorCode' => $selectorCode,
+						'selectorCode' => $this->stripStateFromSelector($selectorCode, false),
 						'xpath' => $xpath,
 						'mod' => $this->convertModArrayFormat($sub_array['styles']['html'], $sub_array),
 						'snippetCollection' => $snippetCollection
@@ -1660,6 +1660,55 @@ trait SettingsTrait {
 		//return $asset;
 	}
 
+	function stripStateFromSelector($selector, $forXPath = true)
+	{
+		// Always remove pseudo-elements
+		$selector = preg_replace(
+			'/::[a-zA-Z0-9_-]+(\([^)]*\))?/i',
+			'',
+			$selector
+		);
+
+		// Base pseudos supported by BOTH DOM and XPath
+		$baseWhitelist = [
+			'empty',
+			'first-child',
+			'last-child',
+			'only-child',
+			'first-of-type',
+			'last-of-type',
+			'only-of-type',
+			'nth-child',
+			'nth-last-child',
+			'nth-of-type',
+			'nth-last-of-type',
+			'not',
+			'root'
+		];
+
+		// Pseudos supported ONLY in the DOM
+		$domOnly = [
+			'has',
+			'scope'
+		];
+
+		$allowed = $forXPath
+			? $baseWhitelist
+			: array_merge($baseWhitelist, $domOnly);
+
+		$allowedPattern = implode('|', $allowed);
+
+		// Strip everything not explicitly allowed
+		$selector = preg_replace(
+			'/:(?!' . $allowedPattern . ')([a-zA-Z0-9_-]+)(\([^)]*\))?/i',
+			'',
+			$selector
+		);
+
+		return trim($selector);
+	}
+
+
 	function convertModArrayFormat($modData, $sub_array){
 		$mods = array();
 		foreach ($modData as $prop => $data){
@@ -1671,7 +1720,9 @@ trait SettingsTrait {
 
 					// don't use $key so we remove value final nested level
 					if (!$isDisabled && !is_null($value)){
-						$mods[$index][$prop] = $value;
+						$mods[$index][$prop] = $prop === 'selector'
+							? $this->stripStateFromSelector($value)
+							: $value;
 					}
 
 				}

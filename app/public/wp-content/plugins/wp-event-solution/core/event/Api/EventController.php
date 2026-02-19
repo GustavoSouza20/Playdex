@@ -18,6 +18,8 @@ use WP_Query;
 use WP_REST_Controller;
 use WP_REST_Server;
 use Etn\Utils\Helper;
+use Eventin\Reports\RevenueReport;
+use WP_User_Query;
 
 /**
  * Event Controller Class
@@ -92,7 +94,7 @@ class EventController extends WP_REST_Controller {
                 array(
                     'methods'             => WP_REST_Server::READABLE,
                     'callback'            => array( $this, 'get_item' ),
-                    'permission_callback' => array( $this, 'get_item_permissions_check' ),
+                    'permission_callback' => array( $this, 'get_single_item_permissions_check' ),
                     'args'                => $this->get_collection_params(),
                 ),
                 array(
@@ -256,6 +258,20 @@ class EventController extends WP_REST_Controller {
                 ],
             ]
         );
+
+        register_rest_route(
+            $this->namespace,
+            '/' . $this->rest_base . '/update-status',
+            [
+                [
+                    'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => array($this, 'update_status'),
+                    'permission_callback' => function () {
+                        return current_user_can('etn_manage_event');
+                    },
+                ],
+            ],
+        );
     }
 
     /**
@@ -265,7 +281,11 @@ class EventController extends WP_REST_Controller {
      * @return WP_Error|boolean
      */
     public function get_item_permissions_check( $request ) {
-        return true;
+        return current_user_can( 'etn_manage_event' ) || wp_verify_nonce( $request->get_header( 'X-Wp-Nonce' ), 'wp_rest' );
+    }
+
+    public function get_single_item_permissions_check( $request ) {
+        return current_user_can( 'etn_manage_event' ) || wp_verify_nonce( $request->get_header( 'X-Wp-Nonce' ), 'wp_rest' );
     }
 
     /**
@@ -282,7 +302,11 @@ class EventController extends WP_REST_Controller {
         $end_date       = ! empty( $request['end_date'] ) ? sanitize_text_field( $request['end_date'] ) : '';
         $search_keyword = ! empty( $request['search_keyword'] ) ? sanitize_text_field( $request['search_keyword'] ) : '';
         $status         = ! empty( $request['status'] ) ? sanitize_text_field( $request['status'] ) : 'all';
-    
+        $category       = ! empty( $request['category'] ) ? intval($request['category']): [];
+        $organizer      = ! empty( $request['organizer'] ) ? intval($request['organizer']) : [];
+        $speaker        = ! empty( $request['speaker'] ) ? intval($request['speaker']) : [];
+        $parent         = isset( $request['parent'] ) ? intval( $request['parent'] ) : null;
+
         $args = [
             'post_type'      => 'etn',
             'post_status'    => 'any',
@@ -290,8 +314,28 @@ class EventController extends WP_REST_Controller {
             'paged'          => $paged,
         ];
 
+        // Filter by parent event for recurring child events.
+        if ( $parent !== null ) {
+            $args['post_parent'] = $parent;
+        }
+        else{
+            $args['post_parent'] = 0;
+        }
+
         if ( ! current_user_can( 'manage_options' ) ) {
-            $args['author'] = get_current_user_id(); 
+            $args['author'] = get_current_user_id();
+        }
+
+        // Category filter (taxonomy query).
+        if ( ! empty( $category ) ) {
+            $args['tax_query'] = [
+                [
+                    'taxonomy' => 'etn_category',
+                    'field'    => 'term_id',
+                    'terms'    => $category,
+                    'operator' => 'IN',
+                ],
+            ];
         }
 
         $meta_query = [];
@@ -301,16 +345,26 @@ class EventController extends WP_REST_Controller {
                 'relation' => 'AND',
                 [
                     'key'     => 'etn_start_date',
-                    'value'   => $start_date,
-                    'compare' => '>=',
-                    'type'    => 'DATETIME'
+                    'value'   => $end_date,
+                    'compare' => '<=',
+                    'type'    => 'DATE'
                 ],
                 [
                     'key'     => 'etn_end_date',
-                    'value'   => $end_date,
-                    'compare' => '<=',
-                    'type'    => 'DATETIME'
+                    'value'   => $start_date,
+                    'compare' => '>=',
+                    'type'    => 'DATE'
                 ],
+            ];
+        }
+
+        if (!empty($type)) {
+            $meta_query[] = [
+                [
+                    'key'     => 'event_type',
+                    'value'   => $type,
+                    'compare' => '='
+                ]
             ];
         }
     
@@ -366,7 +420,7 @@ class EventController extends WP_REST_Controller {
             $args['meta_query'] = $meta_query;   
         }
 
-        if ( $meta_query || $search_keyword || $status ) {
+        if ( $meta_query || $search_keyword || $status || $category || $organizer || $speaker || $parent !== null ) {
             return $this->get_event_list( $args, $request );
         }
 
@@ -395,22 +449,62 @@ class EventController extends WP_REST_Controller {
      * @return  [type]            [return description]
      */
     protected function get_event_list( $args, $request ) {
+        $category       = ! empty( $request['category'] ) ? intval($request['category']) : [];
+        $organizer      = ! empty( $request['organizer'] ) ? intval($request['organizer']) : [];
+        $speaker        = ! empty( $request['speaker'] ) ? intval($request['speaker']) : [];
+
         $events = [];
 
         $post_query   = new WP_Query( $args );
         $query_result = $post_query->posts;
 
         $total_posts  = $post_query->found_posts;
+        $total_upcomming_events = 0; 
+        $total_ongoing_events = 0;
+        $total_expired_events = 0;
     
         foreach ( $query_result as $post ) {
+            $speakers_and_organizers = $this->get_event_organizers_and_speakers($post->ID);
+            
+            $speakers = $speakers_and_organizers['speaker'];
+            $organizers = $speakers_and_organizers['organizer'];
+
+            $categories = get_the_terms( $post->ID, 'etn_category' );
+            $categories     = $categories ? array_column( $categories, 'term_id' ) : [];
+
+            if (!empty($category) && !in_array($category, $categories)) {
+                continue;
+            }
+            if (!empty($speaker) && !in_array($speaker, $speakers)) {
+                continue;
+            }
+            if (!empty($organizer) && !in_array($organizer, $organizers)) {
+                continue;
+            }
+
             $post_data = $this->prepare_item_for_response( $post, $request );
+
+            if(isset($post_data['status'])){
+                if($post_data['status'] == 'Expired'){
+                    $total_expired_events = $total_expired_events + 1;
+                }
+                if($post_data['status'] == 'Ongoing'){
+                    $total_ongoing_events = $total_ongoing_events + 1;
+                }
+                if($post_data['status'] == 'Upcoming'){
+                    $total_upcomming_events = $total_upcomming_events + 1;
+                }
+            }
     
             $events[] = $this->prepare_response_for_collection( $post_data );
         }
     
         $data = [
             'total_items' => $total_posts,
-            'items' => $events,
+            'total_expired_events' => $total_expired_events,
+            'total_ongoing_events' => $total_ongoing_events,
+            'total_upcomming_events' => $total_upcomming_events,
+            'items' => $events
         ];
 
         $response = rest_ensure_response( $data );    
@@ -428,9 +522,35 @@ class EventController extends WP_REST_Controller {
     public function get_item( $request ) {
         $id   = intval( $request['id'] );
         $post = get_post( $id );
-		
 
         $item = $this->prepare_item_for_response( $post, $request );
+
+        // Check if event is a recurring event and fetch child events.
+        $recurring_enabled = get_post_meta( $id, 'recurring_enabled', true );
+
+        if ( $recurring_enabled ) {
+            // Prepare request array with parent parameter and pass through other params.
+            $child_request = [
+                'parent'         => $id,
+                'per_page'       => ! empty( $request['per_page'] ) ? $request['per_page'] : 20,
+                'paged'          => ! empty( $request['paged'] ) ? $request['paged'] : 1,
+                'type'           => ! empty( $request['type'] ) ? $request['type'] : '',
+                'start_date'     => ! empty( $request['start_date'] ) ? $request['start_date'] : '',
+                'end_date'       => ! empty( $request['end_date'] ) ? $request['end_date'] : '',
+                'search_keyword' => ! empty( $request['search_keyword'] ) ? $request['search_keyword'] : '',
+                'status'         => ! empty( $request['status'] ) ? $request['status'] : 'all',
+                'category'       => ! empty( $request['category'] ) ? $request['category'] : [],
+                'organizer'      => ! empty( $request['organizer'] ) ? $request['organizer'] : [],
+                'speaker'        => ! empty( $request['speaker'] ) ? $request['speaker'] : [],
+            ];
+
+            $child_response = $this->get_items( $child_request );
+            $child_data     = $child_response->get_data();
+
+            $item['recurring_events'] = $child_data;
+        } else {
+            $item['recurring_events'] = null;
+        }
 
         $response = rest_ensure_response( $item );
 
@@ -579,7 +699,7 @@ class EventController extends WP_REST_Controller {
 
         $previous_event_start_date = $event->etn_start_date;
         $previous_event_start_time = $event->etn_start_time;
-        
+
         $updated = $event->update( $prepared_event );
 
         if ( ! $updated ) {
@@ -607,7 +727,9 @@ class EventController extends WP_REST_Controller {
 	        delete_post_thumbnail($request['id']);
         }
 
-		
+		clean_post_cache( $event->id );                                                                                                                                            
+        wp_cache_delete( $event->id, 'posts' );                                                                                                                                    
+        wp_cache_delete( $event->id, 'post_meta' );
 		
         $post = get_post( $event->id );
 
@@ -739,7 +861,8 @@ class EventController extends WP_REST_Controller {
         $clone_event = $event->clone();
 
         // Add Copy Text to the title.
-        $event_title = get_the_title( $event_id );
+        $original_post = get_post( $event_id );
+        $event_title = $original_post->post_title;
         $clone_title = $event_title . ' - ' . __( 'Copy', 'eventin' );
 
         // Update the title of the cloned event.
@@ -842,15 +965,6 @@ class EventController extends WP_REST_Controller {
     }
 
     /**
-     * Get the item's schema for display / public consumption purposes.
-     *
-     * @return array
-     */
-    public function get_item_schema() {
-
-    }
-
-    /**
      * Prepare the item for the REST response.
      *
      * @param mixed           $item WordPress representation of the item.
@@ -869,8 +983,24 @@ class EventController extends WP_REST_Controller {
         $tags           = $tags ? array_column( $tags, 'term_id' ) : [];
 
         $schedules       = get_post_meta( $id, 'etn_event_schedule', true );
-        $organizer       = get_post_meta( $id, 'etn_event_organizer', true );
+        
+        $organizer = get_post_meta( $id, 'etn_event_organizer', true );
+
+        if(empty($organizer) || !is_array($organizer)){
+             $organizer = [];
+        }
+
+        $organizer       = array_map( function( $org ) { return (int) $org; }, $organizer );
+
         $speaker         = get_post_meta( $id, 'etn_event_speaker', true );
+        
+        if(empty($speaker) || !is_array($speaker)){
+             $speaker = [];
+        }
+
+        $speaker       = array_map( function( $spk ) { return (int) $spk; }, $speaker );
+
+        
         $organizer_group = get_post_meta( $id, 'organizer_group', true );
         $speaker_group   = get_post_meta( $id, 'speaker_group', true );
         $extra_fields    = get_post_meta( $id, 'attendee_extra_fields', true );
@@ -880,7 +1010,31 @@ class EventController extends WP_REST_Controller {
         $organizer_type  = get_post_meta( $id, 'organizer_type', true );
         $seat_plan       = get_post_meta( $id, 'seat_plan', true );
         $enable_seatmap  = get_post_meta( $id, 'enable_seatmap', true );
+        $sold_tickets    = (array)Helper::etn_get_sold_tickets_by_event( $id );
+        $ticket_variations = etn_safe_decode(get_post_meta( $id, 'etn_ticket_variations', true ));
 
+        if(empty($ticket_variations) || !is_array($ticket_variations)){
+            $ticket_variations = [];
+        }
+
+        if($speaker_type == 'group'){
+            $speaker = $this->etn_get_user_ids_by_group($speaker_group);
+        }
+
+        if($organizer_type == 'group'){
+            $organizer = $this->etn_get_user_ids_by_group($organizer_group);
+        }
+
+        $filter_user = $this->filter_organizer_and_speaker($organizer, $speaker);
+
+        $organizer       = array_map( function( $org ) { return (int) $org; }, $filter_user['organizer']);
+        $speaker         = array_map( function( $org ) { return (int) $org; }, $filter_user['speaker']);
+
+        foreach( $ticket_variations as &$ticket ) {
+            $ticket['etn_sold_tickets'] = !empty($sold_tickets[$ticket['etn_ticket_slug']]) ? $sold_tickets[$ticket['etn_ticket_slug']] : 0;
+        }
+        unset($ticket);
+        $settings_options   = get_option( 'etn_event_options' );      
         $seat_map_switcher = ! metadata_exists( 'post', $id, 'enable_seatmap' ) && $seat_plan ? true : $enable_seatmap;
 
         if ( ! empty( $rsvp_settings['rsvp_form_type'] ) ) {
@@ -897,7 +1051,7 @@ class EventController extends WP_REST_Controller {
 
         $event_data = [
             'id'                      => $id,
-            'title'                   => get_the_title( $id ),
+            'title'                   => $post->post_title,
             'event_slug'              => $post->post_name,
             'description'             => $post->post_content,
             'excerpt'                 => $post->post_excerpt,
@@ -907,13 +1061,16 @@ class EventController extends WP_REST_Controller {
             'author'                  => $author,
             'categories'              => $categories,
             'tags'                    => $tags,
+            'visibility_status'       => $post->post_status,
             'status'                  => $event->get_status(),
+            'password'                => $post->post_password,
             'link'                    => get_permalink( $id ),
+            'link_base'               => home_url().'/'.(!empty($settings_options['event_slug'])?$settings_options['event_slug']:'etn'),
             'schedules'               => is_array( $schedules ) ? array_map('intval', $schedules ) : [],
-            'organizer'               => 'single' === $organizer_type && $organizer ? $organizer : [],
+            'organizer'               => !empty($organizer) ? $organizer : [],
             'organizer_type'          => $organizer_type,
             'organizer_group'         => 'group' === $organizer_type && is_array( $organizer_group ) ? array_map( 'intval', $organizer_group ) : [],
-            'speaker'                 => 'single' === $speaker_type && $speaker ? $speaker : [],
+            'speaker'                 => !empty($speaker) ? $speaker : [],
             'speaker_type'            => $speaker_type,
             'speaker_group'           => 'group' === $speaker_type && is_array( $speaker_group ) ? array_map( 'intval', $speaker_group ) : [],
             'timezone'                => get_post_meta( $id, 'event_timezone', true ),
@@ -931,7 +1088,7 @@ class EventController extends WP_REST_Controller {
             'zoom_id'                 => get_post_meta( $id, 'etn_zoom_id', true ),
             'total_ticket'            => $event->get_total_ticket(),
             'sold_tickets'            => $event->get_total_sold_ticket(),
-            'ticket_variations'       => get_post_meta( $id, 'etn_ticket_variations', true ),
+            'ticket_variations'       => $ticket_variations,
             'event_socials'           => get_post_meta( $id, 'etn_event_socials', true ),
             'google_meet'             => get_post_meta( $id, 'etn_google_meet', true ),
             'google_meet_link'        => get_post_meta( $id, 'etn_google_meet_link', true ),
@@ -963,7 +1120,13 @@ class EventController extends WP_REST_Controller {
             'elementor_supported'     => $this->is_etn_post_type_supported_by_elementor( ),
             'enable_legacy_certificate_template' => get_post_meta( $id, 'enable_legacy_certificate_template', true ),
             '_tax_status'             => get_post_meta( $id, '_tax_status', true ),
-            'sold_ticket_count'       => Helper::etn_get_sold_tickets_by_event( $id )
+            'sold_ticket_count'       => Helper::etn_get_sold_tickets_by_event( $id ),
+            'last_update_date'        => get_post_meta( $id, 'etn_last_update_date', true ),
+            'module'                  => [
+                'seat_map' => ( \Etn\Core\Addons\Helper::instance()->check_active_module( 'seat_map' ) ) ? true : false,
+                'rsvp' => ( \Etn\Core\Addons\Helper::instance()->check_active_module( 'rsvp' ) ) ? true : false,
+            ],
+            'revenue'                 => RevenueReport::get_total_revenue( [], $id ),
         ];
 
         $location_type = get_post_meta( $id, 'etn_event_location_type', true );
@@ -977,6 +1140,112 @@ class EventController extends WP_REST_Controller {
         $event_data['location']      = $location;
 
         return $event_data;
+    }
+
+    /**
+     * Filter organizer and speaker
+     * 
+     * @param array $organizer
+     * @param array $speaker
+     * 
+     * @return array
+     */
+    public function filter_organizer_and_speaker($organizer, $speaker)
+    {
+        $organizer = is_array($organizer) ? $organizer : [];
+        $speaker   = is_array($speaker) ? $speaker : [];
+
+        // Merge all users to validate roles
+        $all_users = array_unique(array_merge($organizer, $speaker));
+
+        $new_organizer = [];
+        $new_speaker   = [];
+
+        foreach ($all_users as $user_id) {
+            $user = get_user_by('id', $user_id);
+
+            if (!$user) {
+                continue;
+            }
+
+            $roles = (array) $user->roles;
+
+            if (in_array('etn-organizer', $roles, true)) {
+                $new_organizer[] = $user_id;
+            }
+
+            if (in_array('etn-speaker', $roles, true)) {
+                $new_speaker[] = $user_id;
+            }
+        }
+
+        // Remove duplicates (just in case)
+        $organizer = array_values(array_unique($new_organizer));
+        $speaker   = array_values(array_unique($new_speaker));
+
+        return [
+            'organizer' => $organizer,
+            'speaker'   => $speaker
+        ];
+    }
+
+    /**                                                                                                                             
+     * Get user IDs by group ID                                                                                                     
+     *                                                                                                                              
+     * @param int $group_id The group term ID from etn_speaker_category taxonomy                                                    
+     * @return array Array of user IDs belonging to the group                                                                       
+     */
+    public function etn_get_user_ids_by_group($group_ids)
+    {
+        if (! $group_ids) {
+            return [];
+        }
+
+        $group_ids = array_map('intval', $group_ids);
+        $matching_user_ids = [];
+
+        // Query users with speaker group meta                                                                                      
+        $user_query = new WP_User_Query([
+            'meta_query' => [
+                'relation' => 'OR',
+                [
+                    'key'     => 'etn_speaker_group',
+                    'compare' => 'EXISTS',
+                ],
+                [
+                    'key'     => 'etn_speaker_speaker_group',
+                    'compare' => 'EXISTS',
+                ],
+            ],
+            'fields' => ['ID'],
+        ]);
+
+        if (! empty($user_query->get_results())) {
+                foreach ($user_query->get_results() as $user) {
+                    $user_id = $user->ID;
+
+                    // Get JSON-decoded group array                                                                                     
+                    $speaker_group = get_user_meta($user_id, 'etn_speaker_group', true);
+
+                    if (!is_array($speaker_group)) {
+                        $speaker_group = json_decode($speaker_group);
+                        if(!is_array($speaker_group)){
+                            $speaker_group = [$speaker_group];
+                        }
+                    }                    
+                    
+                    $speaker_speaker_group = get_user_meta($user_id, 'etn_speaker_speaker_group', true);
+
+                    // Check if group_id exists in either meta                                                                          
+                    if ((is_array($speaker_group) && !empty(array_intersect($group_ids,$speaker_group))) ||
+                        (is_array($speaker_speaker_group) && !empty(array_intersect($group_ids,$speaker_speaker_group)))
+                    ) {
+                        $matching_user_ids[] = $user_id;
+                    }
+                }
+        }
+
+        return $matching_user_ids;
     }
 
     /**
@@ -1214,11 +1483,11 @@ class EventController extends WP_REST_Controller {
         }
 
         if ( isset( $input_data['organizer'] ) ) {
-            $event_data['etn_event_organizer'] = $this->prepare_organizer( $input_data );
+            $event_data['etn_event_organizer'] = etn_sanitize_array_input( $input_data['organizer'] );
         }
 
         if ( isset( $input_data['speaker'] ) ) {
-            $event_data['etn_event_speaker'] = $this->prepare_speaker( $input_data );
+            $event_data['etn_event_speaker'] = etn_sanitize_array_input( $input_data['speaker'] );
         }
 
         if ( isset( $input_data['timezone'] ) ) {
@@ -1246,7 +1515,7 @@ class EventController extends WP_REST_Controller {
         }
 
         if ( isset( $input_data['ticket_variations'] ) ) {
-            $event_data['etn_ticket_variations'] = $input_data['ticket_variations'];
+            $event_data['etn_ticket_variations'] = etn_sanitize_array_input( $input_data['ticket_variations'] );
         }
 
         if ( isset( $input_data['event_logo'] ) ) {
@@ -1314,44 +1583,46 @@ class EventController extends WP_REST_Controller {
         }
 
         if ( isset( $input_data['event_socials'] ) ) {
-            $event_data['etn_event_socials'] = $input_data['event_socials'];
+            $event_data['etn_event_socials'] = etn_sanitize_array_input( $input_data['event_socials'] );
         }
 
         if ( isset( $input_data['schedules'] ) ) {
-            $event_data['etn_event_schedule'] = $input_data['schedules'];
+            $event_data['etn_event_schedule'] = etn_sanitize_array_input( $input_data['schedules'] );
         }
 
         if ( isset( $input_data['categories'] ) ) {
-            $event_data['categories'] = $input_data['categories'];
+            $event_data['categories'] = etn_sanitize_array_input( $input_data['categories'] );
         }
 
         if ( isset( $input_data['tags'] ) ) {
-            $event_data['tags'] = $input_data['tags'];
+            $event_data['tags'] = etn_sanitize_array_input( $input_data['tags'] );
         }
 
         if ( isset( $input_data['faq'] ) ) {
-            $event_data['etn_event_faq'] = $input_data['faq'];
+            $event_data['etn_event_faq'] = etn_sanitize_array_input( $input_data['faq'] );
         }
 
         if ( isset( $input_data['extra_fields'] ) ) {
-            $event_data['attendee_extra_fields'] = $input_data['extra_fields'];
+            $event_data['attendee_extra_fields'] = etn_sanitize_array_input( $input_data['extra_fields'] );
         }
+
+        $event_data['etn_last_update_date'] = wp_date( 'Y-m-d H:i:s', current_time( 'timestamp' ) );
 
         // Support speaker and organizer group.
         if ( isset( $input_data['speaker_type'] ) ) {
-            $event_data['speaker_type'] = $input_data['speaker_type'];
+            $event_data['speaker_type'] = 'single';
         }
 
         if ( isset( $input_data['speaker_group'] ) ) {
-            $event_data['speaker_group'] = $input_data['speaker_group'];
+            $event_data['speaker_group'] = etn_sanitize_array_input( $input_data['speaker_group'] );
         }
 
         if ( isset( $input_data['organizer_type'] ) ) {
-            $event_data['organizer_type'] = $input_data['organizer_type'];
+            $event_data['organizer_type'] = 'single';
         }
 
         if ( isset( $input_data['organizer_group'] ) ) {
-            $event_data['organizer_group'] = $input_data['organizer_group'];
+            $event_data['organizer_group'] = 'single';
         }
 
         if ( isset( $input_data['fluent_crm_webhook'] ) ) {
@@ -1364,21 +1635,21 @@ class EventController extends WP_REST_Controller {
         }
 
         if ( isset( $input_data['event_recurrence'] ) ) {
-            $event_data['etn_event_recurrence'] = $input_data['event_recurrence'];
+            $event_data['etn_event_recurrence'] = etn_sanitize_array_input( $input_data['event_recurrence'] );
         }
 
         // RSVP support.
         if ( isset( $input_data['rsvp_settings'] ) ) {
-            $event_data['rsvp_settings'] = $input_data['rsvp_settings'];
+            $event_data['rsvp_settings'] = etn_sanitize_array_input( $input_data['rsvp_settings'] );
         }
 
         // Seat Plan Support.
         if ( isset( $input_data['seat_plan'] ) ) {
-            $event_data['seat_plan'] = $input_data['seat_plan'];
+            $event_data['seat_plan'] = etn_sanitize_array_input( $input_data['seat_plan'] );
         }
 
         if ( isset( $input_data['seat_plan_settings'] ) ) {
-            $event_data['seat_plan_settings'] = $input_data['seat_plan_settings'];
+            $event_data['seat_plan_settings'] = etn_sanitize_array_input( $input_data['seat_plan_settings'] );
         }
 
         // Template support.
@@ -1402,8 +1673,12 @@ class EventController extends WP_REST_Controller {
             $event_data['event_layout'] = $input_data['event_layout'];
         }
 
-        if ( isset( $input_data['status'] ) ) {
-            $event_data['post_status'] = $input_data['status'];
+        if ( isset( $input_data['visibility_status'] ) ) {
+            $event_data['post_status'] = $input_data['visibility_status'];
+        }
+
+        if ( isset( $input_data['password'] ) ) {
+            $event_data['post_password'] = $input_data['password'];
         }
 
         if ( ! empty( $input_data['event_slug'] ) ) {
@@ -1438,6 +1713,16 @@ class EventController extends WP_REST_Controller {
         // buddyboss group add
         if ( isset( $input_data['_etn_buddy_group_id'] ) ) {
           $event_data['menu_order'] = $input_data['_etn_buddy_group_id'];
+        }
+
+        $sold_tickets    = (array)Helper::etn_get_sold_tickets_by_event( $input_data['id'] );
+
+        foreach($event_data['etn_ticket_variations'] as &$ticket){
+            $ticket['etn_sold_tickets'] = !empty($sold_tickets[$ticket['etn_ticket_slug']]) ? $sold_tickets[$ticket['etn_ticket_slug']] : 0;
+            $ticket['etn_avaiilable_tickets'] = (int)$ticket['etn_avaiilable_tickets'];
+            if($ticket['etn_avaiilable_tickets'] > 0 && $ticket['etn_sold_tickets'] > $ticket['etn_avaiilable_tickets']){
+                return new WP_Error( 'etn_ticket_sold_out', 'Available ticket must be greater than the sold ticket' );
+            }
         }
 		
         return $event_data;
@@ -1592,19 +1877,38 @@ class EventController extends WP_REST_Controller {
      *
      * @return  WP_Rest_Response | WP_Error
      */
+    /**
+     * Get author lists
+     *
+     * @param   WP_Rest_Request  $request  [$request description]
+     *
+     * @return  WP_Rest_Response | WP_Error
+     */
     public function get_authors( $request ) {
+        $per_page = ! empty( $request['per_page'] ) ? intval( $request['per_page'] ) : 20;
+        $paged    = ! empty( $request['paged'] ) ? intval( $request['paged'] ) : 1;
+
+        $user_query = new WP_User_Query( [
+            'number'  => $per_page,
+            'paged'   => $paged,
+            'orderby' => 'display_name',
+            'order'   => 'ASC',
+            'fields'  => [ 'ID', 'display_name' ],
+        ] );
+
         $users_data = [];
-
-        $users = get_users();
-
-        foreach ( $users as $user ) {
+        foreach ( $user_query->get_results() as $user ) {
             $users_data[] = [
                 'id'   => $user->ID,
-                'name' => $user->display_name
+                'name' => $user->display_name,
             ];
         }
 
-        return rest_ensure_response( $users_data );
+        $response = rest_ensure_response( $users_data );
+        $response->header( 'X-WP-Total', $user_query->get_total() );
+        $response->header( 'X-WP-TotalPages', ceil( $user_query->get_total() / $per_page ) );
+
+        return $response;
     }
 
     /**
@@ -1684,5 +1988,79 @@ class EventController extends WP_REST_Controller {
             return $remaining_capacity;
         }
         return 0;
+    }
+
+    /**
+     * Update event status
+     * 
+     * @param   WP_Rest_Request  $request  [$request description]
+     * 
+     * @return  WP_Rest_Response | WP_Error
+     */
+    public function update_status($request) {
+        $input_data = is_a($request, 'WP_REST_Request') ? json_decode($request->get_body(), true) : $request;
+
+        $event_ids = !empty($input_data['event_ids']) && is_array($input_data['event_ids']) ? array_map('intval', $input_data['event_ids']) : [];
+        $status = !empty($input_data['status']) ? sanitize_text_field($input_data['status']) : '';
+
+        if (!in_array($status, ['publish', 'draft'])) {
+            return new WP_Error('invalid_status', 'Status must be Publish OR Draft', array('status' => 400));
+        }
+
+        foreach ($event_ids as $event_id) {
+            $event = get_post($event_id);
+            if (!$event || $event->post_type !== 'etn') {
+                return new WP_Error(
+                    'invalid_event',
+                    __('Invalid event ID.', 'eventin'),
+                    ['status' => 404]
+                );
+            }
+
+            $result = wp_update_post([
+                'ID' => $event_id,
+                'post_status' => $status
+            ]);
+
+            if (is_wp_error($result)) {
+                return new WP_Error(
+                    'update_failed',
+                    __('Failed to update event status.', 'eventin'),
+                    ['status' => 500]
+                );
+            }
+        }
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => __('Event status updated successfully.', 'eventin'),
+        ]);
+    }
+
+    public function get_event_organizers_and_speakers($event_id){
+        $event          = new Event_Model( $event_id );
+        $organizer       = array_map( function( $org ) { return (int) $org; }, get_post_meta( $event_id, 'etn_event_organizer', true ) ?: [] );
+        $speaker         = get_post_meta( $event_id, 'etn_event_speaker', true );
+
+        
+        $organizer_group = get_post_meta( $event_id, 'organizer_group', true );
+        $speaker_group   = get_post_meta( $event_id, 'speaker_group', true );
+
+
+
+        $speaker_type    = get_post_meta( $event_id, 'speaker_type', true );
+        $organizer_type  = get_post_meta( $event_id, 'organizer_type', true );
+
+        if($speaker_type == 'group'){
+            $speaker = $this->etn_get_user_ids_by_group($speaker_group);
+        }
+
+        if($organizer_type == 'group'){
+            $organizer = $this->etn_get_user_ids_by_group($organizer_group);
+        }
+
+        $filter_user = $this->filter_organizer_and_speaker($organizer, $speaker);
+
+        return $filter_user;
     }
 }

@@ -328,7 +328,7 @@ class Hooks {
                     <tr>
                         <td><?php echo esc_html($attendee['etn_name']); ?></td>
                         <td><?php echo esc_html($attendee['ticket_name']); ?></td>
-                        <td><?php echo $event_display; ?></td>
+                        <td><?php echo wp_kses_post( $event_display ); ?></td>
                         <td>
                             <?php 
                                 $url = add_query_arg(
@@ -663,7 +663,7 @@ class Hooks {
 		$thankyou_redirect   = isset( $thankyou_redirect ) ? $thankyou_redirect : '';
   
         $eventin_order           = new OrderModel($order_id);
-        $validate_ticket         = $eventin_order->validate_ticket();
+        $validate_ticket         = $eventin_order->validate_ticket(true);
 
         if ( is_wp_error( $validate_ticket ) ) {
             wp_redirect( site_url( 'eventin-purchase/checkout/#/failed?action=ticket-limit-exit' ) );
@@ -700,17 +700,7 @@ class Hooks {
                 $eventin_order->send_email();
 		    }
         }
-		
-        
-        // deducing coupon discount from Order($post_type = 'etn-order')
-        
-//        $eventin_order->update_meta([
-//	        "total_price" => $wc_order->order
-//        ]);
-		
-		//dd($wc_order->get_data());
 
-  
 		// Redirect to Eventin  thank you page
 		$url = '';
 		
@@ -750,7 +740,7 @@ class Hooks {
                         <ul class="single-ticket-seats__list">
                             <?php
                                 if (!empty($single_variation['selected_seats'])) {
-                                    echo "<li>". $single_variation['selected_seats']. "</li>";
+                                    echo "<li>". esc_html( $single_variation['selected_seats'] ). "</li>";
                                 }
                             ?>
                         </ul>
@@ -1031,6 +1021,7 @@ class Hooks {
         foreach ( $order->get_items() as $item_id => $item ) {
             $event_id       = \Etn\Core\Event\Helper::instance()->order_event_id($item);
             $event_object   = get_post( $event_id );
+            $sold_tickets   = $event_id ? (array)Helper::etn_get_sold_tickets_by_event( $event_id ) : [];
             if ( !empty( $event_object ) ) {
                 $ticket_variations  = !empty( get_post_meta( $event_id, "etn_ticket_variations", true ) ) ? get_post_meta( $event_id, "etn_ticket_variations", true ) : [];
 
@@ -1063,7 +1054,7 @@ class Hooks {
                             $ticket_index = $this->search_array_by_value( $ticket_variations, $item_variation['etn_ticket_slug'] );
                             if ( isset( $ticket_variations[ $ticket_index ] ) ) {
                                 $variation_picked_qty   = absint( $item_variation[ 'etn_ticket_qty' ] );
-                                $etn_sold_tickets       = absint( $ticket_variations[ $ticket_index ]['etn_sold_tickets'] );
+                                $etn_sold_tickets       = $sold_tickets[$item_variation['etn_ticket_slug']] ?? 0;
                                 $total_tickets          = absint( $ticket_variations[ $ticket_index ]['etn_avaiilable_tickets'] );
 
                                 if ( $decrease_time ) {
@@ -1508,6 +1499,7 @@ class Hooks {
             $error_messages = $ticket_qty_errors = $cart_picked_data = [];
 
             $event_id   = $product_id;
+            $sold_tickets   = $event_id ? (array)Helper::etn_get_sold_tickets_by_event( $event_id ) : [];
             $event_name = get_the_title( $event_id );
             $ticket_variations = !empty( get_post_meta( $event_id, "etn_ticket_variations", true ) ) ? get_post_meta( $event_id, "etn_ticket_variations", true ) : [];
 
@@ -1544,7 +1536,7 @@ class Hooks {
                             $error_cat = [];
 
                             $total_tickets      = absint( $ticket_variations[ $ticket_index ]['etn_avaiilable_tickets'] );
-                            $etn_sold_tickets   = absint( $ticket_variations[ $ticket_index ]['etn_sold_tickets'] );
+                            $etn_sold_tickets   = $sold_tickets[$post_contents['ticket_slug'][ $quantity_index ]] ?? 0;
                             $remaining_ticket   = $total_tickets - $etn_sold_tickets;
 
                             $etn_min_ticket     = absint( $ticket_variations[ $ticket_index ]['etn_min_ticket'] );
@@ -2222,8 +2214,8 @@ class Hooks {
             }
         
             $table_content .= "</div>";
-        
-            echo $table_content;
+
+            echo wp_kses_post( $table_content );
         } else {
             echo esc_html__('No Attendee Found', 'eventin');
         }

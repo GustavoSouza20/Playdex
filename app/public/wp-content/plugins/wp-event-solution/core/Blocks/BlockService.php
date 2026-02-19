@@ -1,54 +1,57 @@
 <?php
 namespace Eventin\Blocks;
 
-use Eventin\Interfaces\HookableInterface;
+use Eventin\Blocks\BlockTypes\AttendeeInfo;
 use Eventin\Blocks\BlockTypes\BuyTicket;
+use Eventin\Blocks\BlockTypes\Container;
+use Eventin\Blocks\BlockTypes\CustomButton;
+use Eventin\Blocks\BlockTypes\CustomImage;
+use Eventin\Blocks\BlockTypes\DiamondSeparator;
 use Eventin\Blocks\BlockTypes\EventAddToCalender;
+use Eventin\Blocks\BlockTypes\EventAttendee;
 use Eventin\Blocks\BlockTypes\EventBanner;
+use Eventin\Blocks\BlockTypes\EventCalendar;
 use Eventin\Blocks\BlockTypes\EventCategory;
 use Eventin\Blocks\BlockTypes\EventCountDownTimer;
 use Eventin\Blocks\BlockTypes\EventDateTime;
 use Eventin\Blocks\BlockTypes\EventDescription;
+use Eventin\Blocks\BlockTypes\EventFaq;
+use Eventin\Blocks\BlockTypes\EventInfo;
+use Eventin\Blocks\BlockTypes\EventList;
+use Eventin\Blocks\BlockTypes\EventLogo;
 use Eventin\Blocks\BlockTypes\EventOrganizer;
+use Eventin\Blocks\BlockTypes\EventRSVP;
 use Eventin\Blocks\BlockTypes\EventSchedule;
+use Eventin\Blocks\BlockTypes\EventSocial;
 use Eventin\Blocks\BlockTypes\EventSpeaker;
 use Eventin\Blocks\BlockTypes\EventTag;
-use Eventin\Blocks\BlockTypes\EventVenue;
-use Eventin\Blocks\BlockTypes\EventLogo;
-use Eventin\Blocks\BlockTypes\EventFaq;
-use Eventin\Blocks\BlockTypes\EventList;
-use Eventin\Blocks\BlockTypes\EventRSVP;
-use Eventin\Blocks\BlockTypes\EventSocial;
 use Eventin\Blocks\BlockTypes\EventTitle;
+use Eventin\Blocks\BlockTypes\EventVenue;
+use Eventin\Blocks\BlockTypes\QRCodeBlock;
 use Eventin\Blocks\BlockTypes\RecurringEvent;
 use Eventin\Blocks\BlockTypes\RelatedEventsEnhanced;
-use Eventin\Blocks\BlockTypes\EventCalendar;
 use Eventin\Blocks\BlockTypes\ScheduleTab;
 use Eventin\Blocks\BlockTypes\SpeakerList;
-use Eventin\Blocks\BlockTypes\ZoomMeeting;
-use Eventin\Blocks\BlockTypes\Ticket;
-use Eventin\Blocks\BlockTypes\QRCodeBlock;
 use Eventin\Blocks\BlockTypes\TemplateContainer;
 use Eventin\Blocks\BlockTypes\TemplateHeading;
-use Eventin\Blocks\BlockTypes\DiamondSeparator;
-use Eventin\Blocks\BlockTypes\AttendeeInfo;
-use Eventin\Blocks\BlockTypes\EventInfo;
+use Eventin\Blocks\BlockTypes\Ticket;
 use Eventin\Blocks\BlockTypes\TicketInfo;
-use Eventin\Blocks\BlockTypes\Container;
-use Eventin\Blocks\BlockTypes\CustomImage;
-use Eventin\Blocks\BlockTypes\CustomButton;
+use Eventin\Blocks\BlockTypes\ZoomMeeting;
+use Eventin\Interfaces\HookableInterface;
 
 /**
  * Block Service Class
  */
-class BlockService implements HookableInterface {
+class BlockService implements HookableInterface
+{
     /**
      * Register all hooks
      *
      * @return  void
      */
-    public function register_hooks(): void {
-        add_filter( 'eventin_gutenberg_blocks', [ $this, 'add_blocks' ],5 );        
+    public function register_hooks(): void
+    {
+        add_filter('eventin_gutenberg_blocks', [$this, 'add_blocks'], 5);
     }
 
     /**
@@ -56,7 +59,8 @@ class BlockService implements HookableInterface {
      *
      * @return  array
      */
-    public function add_blocks( $blocks ) {
+    public function add_blocks($blocks)
+    {
         $new_blocks = [
             EventVenue::class,
             BuyTicket::class,
@@ -93,10 +97,9 @@ class BlockService implements HookableInterface {
             Container::class,
             CustomImage::class,
             CustomButton::class,
+            EventAttendee::class,
         ];
 
-        return array_unique( array_merge( $blocks, $new_blocks ) );
+        return array_unique(array_merge($blocks, $new_blocks));
     }
 }
-
-

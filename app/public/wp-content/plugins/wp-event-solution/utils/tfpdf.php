@@ -279,7 +279,7 @@ class tFPDF {
 
     function Error( $msg ) {
         // Fatal error
-        throw new \Exception( 'FPDF error: ' . $msg );
+        throw new \Exception( 'FPDF error: ' . esc_html( $msg ) );
     }
 
     function Close() {

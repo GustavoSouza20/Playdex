@@ -89,7 +89,7 @@ class EnsHooks {
     }
 
     public function get_to_attendee_emails( $to_emails, $action_data, $action_name ) {
-        if($action_name == 'event_reminder_email') {
+        if($action_name == 'event_reminder_email' || $action_name == 'send_email_to_all_attendees') {
             $event_id = $action_data['event_id'];
 
             $args = array(
@@ -101,6 +101,11 @@ class EnsHooks {
                     array(
                         'key'     => 'etn_event_id',
                         'value'   => $event_id,
+                        'compare' => '=',
+                    ),
+                    array(
+                        'key'     => 'etn_status',
+                        'value'   => 'success',
                         'compare' => '=',
                     ),
                 ),

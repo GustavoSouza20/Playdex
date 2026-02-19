@@ -63,7 +63,7 @@ class FlowManager {
                 continue;
             }
 
-            $this->execute_flow( $flow_config, $data, $action );
+            $this->execute_flow( $flow_config, $data, $action, null, $flow->ID );
         }
     }
 
@@ -76,6 +76,8 @@ class FlowManager {
      * @param string $resume_time The resume time.
      */
     public function resume_flow_callback( $flow_id, $resume_time ) {
+        $prefix_for_cpt = $this->identifier;
+        
         if ( !$flow_id || !$resume_time ) {
             return;
         }
@@ -94,12 +96,14 @@ class FlowManager {
             return;
         }
 
-        $flow        = $checkpoint['flow_snapshot'];
+        
         $hook_data   = $checkpoint['hook_data'];
         $resume_node = $checkpoint['resume_node'] ?? null;
         $action = $checkpoint['action'];
+        $flow_post_id = $checkpoint['flow_post_id'] ?? null;
+        $flow = get_post_meta( $flow_post_id, '_' . $prefix_for_cpt . '_notification_flow_flow_config', true );
 
-        $this->execute_flow( $flow, $hook_data, $action, $resume_node );
+        $this->execute_flow( $flow, $hook_data, $action, null, $flow_post_id );
     }
 
     /**
@@ -109,9 +113,11 @@ class FlowManager {
      *
      * @param array $flow         The flow data.
      * @param array $hook_data    The hook data.
+     * @param string $action      The action name.
      * @param string|null $resume_from_id The node ID to resume from.
+     * @param int|null $flow_post_id The flow post ID.
      */
-    public function execute_flow( $flow, $hook_data,$action, $resume_from_id = null ) {
+    public function execute_flow( $flow, $hook_data, $action, $resume_from_id = null, $flow_post_id = null ) {
         if ( !isset( $flow['nodes'] ) || !is_array( $flow['nodes'] ) ||
             !isset( $flow['edges'] ) || !is_array( $flow['edges'] ) ) {
             return;
@@ -177,7 +183,7 @@ class FlowManager {
                 }
 
                 $is_true         = $this->compare_values( $field_value, $operator, $value );
-                $lebel           = $is_true ? 'True' : 'false';
+                $lebel           = $is_true ? 'true' : 'false';
                 $current_node_id = $this->get_next_node_id(
                     $edges,
                     $node['id'],
@@ -241,6 +247,13 @@ class FlowManager {
                     break;
                 }
 
+                // Check if resume time has already passed
+                if ( time() >= $resume_time ) {
+                    // Resume time has passed, move to the next node immediately
+                    $current_node_id = $next_node_id;
+                    break;
+                }
+
                 $flow_id = uniqid( 'flow_', true );
 
                 
@@ -273,19 +286,28 @@ class FlowManager {
                     'resume_after'  => $resume_time,
                     'flow_snapshot' => $flow,
                     'hook_data'     => $hook_data,
-                    'action'        => $action
+                     'action'        => $action,
+                    'flow_post_id'  => $flow_post_id
                 ] );
 
+                
+                // Debug information
+                $hook_name = $general_prefix . '_resume_flow_after_delay';
+                $current_time = time();
+                $time_diff = $resume_time - $current_time;
 
                 // Schedule resume
-                wp_schedule_single_event(
+                $scheduled_event = wp_schedule_single_event(
                     $resume_time,
-                    $general_prefix . '_resume_flow_after_delay',
+                    $hook_name,
                     [
                         'flow_id'     => $flow_id,
                         'resume_time' => $resume_time,
                     ]
                 );
+
+                // Verify if event was actually scheduled
+                $next_scheduled = wp_next_scheduled($hook_name, ['flow_id' => $flow_id, 'resume_time' => $resume_time]);
 
                 return; // Pause execution
 
@@ -295,24 +317,49 @@ class FlowManager {
                     break;
                 }
 
-                $receiverType = $node['data']['receiverType'] ?? null;
-                if ( $receiverType && isset( $hook_data[$receiverType] ) ) {
-                    $user_email = $hook_data[$receiverType];
-                    $user_email = apply_filters( 'notification_sdk_to_emails', $hook_data[$receiverType], $hook_data, $action );
+                // Check session_id tracking
+                $session_id = $hook_data['session_id'] ?? null;
+                $processed_session_ids = $node['data']['processed_session_ids'] ?? [];
 
-                    if(is_array( $user_email )) {
-                        foreach ( $user_email as $key=>$email ) {
-                            $this->send_email_to_user( $receiverType, $email, $node['data'], $hook_data, $action,$key );
+                $should_send_email = true;
+
+                if ( $session_id && in_array( $session_id, $processed_session_ids ) ) {
+                    // Session already processed, skip sending
+                    $should_send_email = false;
+                }
+
+                if ( $should_send_email ) {
+                    $receiverType = $node['data']['receiverType'] ?? null;
+                    if ( $receiverType && isset( $hook_data[$receiverType] ) ) {
+                        $user_email = $hook_data[$receiverType];
+                        $user_email = apply_filters( 'notification_sdk_to_emails', $hook_data[$receiverType], $hook_data, $action );
+
+                        if(is_array( $user_email )) {
+                            foreach ( $user_email as $key=>$email ) {
+                                $this->send_email_to_user( $receiverType, $email, $node['data'], $hook_data, $action,$key );
+                            }
+                        }
+                        else{
+                            $this->send_email_to_user( $receiverType, $user_email, $node['data'], $hook_data, $action );
                         }
                     }
-                    else{
-                        $this->send_email_to_user( $receiverType, $user_email, $node['data'], $hook_data, $action );
+
+                    // Add session_id to processed list and update database
+                    if ( $session_id && $flow_post_id ) {
+                        $processed_session_ids[] = $session_id;
+                        $this->update_node_processed_sessions( $flow_post_id, $node['id'], $processed_session_ids );
                     }
                 }
+
                 $current_node_id = $this->get_next_node_id( $edges, $node['id'] );
                 break;
 
             case 'end':
+                // Remove current session_id from all email nodes
+                $session_id = $hook_data['session_id'] ?? null;
+                if ( $session_id && $flow_post_id ) {
+                    $this->remove_session_from_flow( $flow_post_id, $session_id, $nodes );
+                }
                 return;
 
             default:
@@ -497,5 +544,90 @@ class FlowManager {
 
         $email_sender = new EmailSender( $action_name, $receiverType, $email, $from, $subject, $body, $action_data, $count );
         $email_sender->send();
+    }
+
+    /**
+     * Update node's processed session IDs in database.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $flow_post_id         The flow post ID.
+     * @param string $node_id              The node ID to update.
+     * @param array  $processed_session_ids The array of processed session IDs.
+     */
+    public function update_node_processed_sessions( $flow_post_id, $node_id, $processed_session_ids ) {
+        if ( !$flow_post_id || !$node_id ) {
+            return;
+        }
+
+        $prefix_for_cpt = $this->identifier;
+        $meta_key = '_' . $prefix_for_cpt . '_notification_flow_flow_config';
+
+        $flow_config = get_post_meta( $flow_post_id, $meta_key, true );
+
+        if ( empty( $flow_config ) || !is_array( $flow_config ) || !isset( $flow_config['nodes'] ) ) {
+            return;
+        }
+
+        // Find and update the specific node
+        foreach ( $flow_config['nodes'] as &$node ) {
+            if ( isset( $node['id'] ) && $node['id'] === $node_id ) {
+                if ( !isset( $node['data'] ) || !is_array( $node['data'] ) ) {
+                    $node['data'] = [];
+                }
+                $node['data']['processed_session_ids'] = $processed_session_ids;
+                break;
+            }
+        }
+
+        // Update the flow config in database
+        update_post_meta( $flow_post_id, $meta_key, $flow_config );
+    }
+
+    /**
+     * Remove session ID from all email nodes in the flow.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $flow_post_id The flow post ID.
+     * @param string $session_id   The session ID to remove.
+     * @param array  $nodes        The nodes array.
+     */
+    public function remove_session_from_flow( $flow_post_id, $session_id, $nodes ) {
+        if ( !$flow_post_id || !$session_id || empty( $nodes ) ) {
+            return;
+        }
+
+        $prefix_for_cpt = $this->identifier;
+        $meta_key = '_' . $prefix_for_cpt . '_notification_flow_flow_config';
+
+        $flow_config = get_post_meta( $flow_post_id, $meta_key, true );
+
+        if ( empty( $flow_config ) || !is_array( $flow_config ) || !isset( $flow_config['nodes'] ) ) {
+            return;
+        }
+
+        $updated = false;
+
+        // Loop through all nodes and remove session_id from email nodes
+        foreach ( $flow_config['nodes'] as &$node ) {
+            if ( isset( $node['name'] ) && $node['name'] === 'email' &&
+                 isset( $node['data']['processed_session_ids'] ) &&
+                 is_array( $node['data']['processed_session_ids'] ) ) {
+
+                $key = array_search( $session_id, $node['data']['processed_session_ids'] );
+                if ( $key !== false ) {
+                    unset( $node['data']['processed_session_ids'][$key] );
+                    // Re-index array
+                    $node['data']['processed_session_ids'] = array_values( $node['data']['processed_session_ids'] );
+                    $updated = true;
+                }
+            }
+        }
+
+        // Only update if we made changes
+        if ( $updated ) {
+            update_post_meta( $flow_post_id, $meta_key, $flow_config );
+        }
     }
 }

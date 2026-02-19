@@ -216,12 +216,12 @@ trait FileTrait {
 				// copy was successful
 				else {
 
-					//wp_die('Copy successful, try extracting '. $newFileName);
-
 					if ($isZipFile){
 
 						$error_logged = false;
 						$success = false;
+
+						//wp_die('Copy successful, try extracting '. $newFileName);
 
 						// try WordPress function fallback
 						if (!$success){
@@ -382,7 +382,9 @@ trait FileTrait {
 			}
 		}
 
-		//wp_die('Res: '. print_r($res, true));
+		/*if (str_contains($zip_file, 'amender.zip')){
+			wp_die('Result: '. print_r([$allowOverwrite, $zip_file, $unzipDir, $result], true));
+		}*/
 
 		return array(
 			'success' => ($result === TRUE),

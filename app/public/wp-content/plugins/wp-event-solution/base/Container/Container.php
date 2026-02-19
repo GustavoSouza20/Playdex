@@ -45,7 +45,7 @@ class Container {
      *
      * @return void
      */
-    public function set( string $id, object $instance = null ): void {
+    public function set( string $id, mixed $instance = null ): void {
         if ( $instance === null ) {
             $instance = $id;
         }
@@ -80,13 +80,13 @@ class Container {
      */
     public function resolve( string $class_name ): object {
         if ( ! class_exists( $class_name ) ) {
-            throw new Exception( "Class: {$class_name} does not exist" );
+            throw new Exception( esc_html( "Class: {$class_name} does not exist" ) );
         }
 
         $reflection_class = new ReflectionClass( $class_name );
 
         if ( ! $reflection_class->isInstantiable() ) {
-            throw new DependencyIsNotInstantiableException( "Class: {$class_name} is not instantiable" );
+            throw new DependencyIsNotInstantiableException( esc_html( "Class: {$class_name} is not instantiable" ) );
         }
 
         if ( null === $reflection_class->getConstructor() ) {
@@ -120,7 +120,7 @@ class Container {
                 if ( $parameter->isDefaultValueAvailable() ) {
                     $dependencies[] = $parameter->getDefaultValue();
                 } else {
-                    throw new DependencyHasNoDefaultValueException( "Class: {$parameter->name} dependency can not be resolved" );
+                    throw new DependencyHasNoDefaultValueException( esc_html( "Class: {$parameter->name} dependency can not be resolved" ) );
                 }
             } else {
                 $dependencies[] = $this->get( $dependency );

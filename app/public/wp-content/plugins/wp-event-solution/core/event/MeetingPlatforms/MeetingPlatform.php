@@ -46,7 +46,7 @@ class MeetingPlatform {
         $platforms = self::get_platforms();
 
         if ( ! isset( $platforms[$platform] ) ) {
-            throw new Exception( __( 'Unsupported platform ' . $platform, 'eventin' ) );
+            throw new Exception( esc_html__( 'Unsupported platform ' . $platform, 'eventin' ) );
         }
 
         return $platforms[$platform];

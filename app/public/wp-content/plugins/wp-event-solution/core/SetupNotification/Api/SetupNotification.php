@@ -59,7 +59,7 @@ class SetupNotification extends WP_REST_Controller {
      */
     public function get_item_permissions_check( $request ) {
         return current_user_can( 'etn_manage_setting' ) 
-                || current_user_can( 'etn_manage_event' ) || true;
+                || current_user_can( 'etn_manage_event' );
     }
 
     /**

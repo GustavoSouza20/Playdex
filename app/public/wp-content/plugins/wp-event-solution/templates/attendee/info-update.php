@@ -73,7 +73,7 @@ use Etn\Utils\Helper;
 
                                         <div class="etn-<?php echo esc_attr( $class_name_from_label ); ?>-field etn-group-field">
                                             <label for="etn_attendee_extra_field_<?php echo esc_attr( $index ); ?>">
-						                        <?php echo esc_html( $label_content ); echo  Helper::kses( $required_span ); ?>
+						                        <?php echo esc_html( $label_content ); echo Helper::kses( $required_span ); ?>
                                             </label>
 					                        <?php
 						                        if( $default_extra_field['field_type'] == 'radio' ){
@@ -103,7 +103,7 @@ use Etn\Utils\Helper;
 							                        if( is_array( $checkbox_arr ) && ! empty( $checkbox_arr ) ) {
 								                        $extra_field_saved_value_arr = [];
 								                        if ( !empty( $extra_field_saved_value ) ) {
-									                        $extra_field_saved_value_arr = maybe_unserialize( $extra_field_saved_value );
+									                        $extra_field_saved_value_arr = etn_safe_decode( $extra_field_saved_value );
 								                        }
 								                        ?>
                                                         <div class="etn-checkbox-field-wrap">
@@ -121,7 +121,7 @@ use Etn\Utils\Helper;
                                                                                data-etn_required="<?php echo esc_attr( $etn_field_type );?>"
 													                        <?php echo esc_attr( $etn_field_type ); ?>
                                                                         />
-                                                                        <label for="<?php esc_attr_e( $id, 'eventin' );?>"><?php echo html_entity_decode( $checkbox_val );?></label>
+                                                                        <label for="<?php esc_attr_e( $id, 'eventin' );?>"><?php echo esc_html( html_entity_decode( $checkbox_val ) );?></label>
                                                                     </div>
 											                        <?php
 										                        }
@@ -180,7 +180,7 @@ use Etn\Utils\Helper;
 
                                         <div class="etn-<?php echo esc_attr( $class_name_from_label ); ?>-field etn-group-field">
                                             <label for="etn_attendee_extra_field_<?php echo esc_attr( $index ); ?>">
-                                                <?php echo esc_html( $label_content ); echo  Helper::kses( $required_span ); ?>
+                                                <?php echo esc_html( $label_content ); echo Helper::kses( $required_span ); ?>
                                             </label>
                                             <?php
                                                 if( $attendee_extra_field['field_type'] == 'radio' ){
@@ -210,7 +210,7 @@ use Etn\Utils\Helper;
                                                     if( is_array( $checkbox_arr ) && ! empty( $checkbox_arr ) ) {
                                                         $extra_field_saved_value_arr = [];
                                                         if ( !empty( $extra_field_saved_value ) ) {
-                                                            $extra_field_saved_value_arr = maybe_unserialize( $extra_field_saved_value );
+                                                            $extra_field_saved_value_arr = etn_safe_decode( $extra_field_saved_value );
                                                         }
                                                         ?>
                                                         <div class="etn-checkbox-field-wrap">
@@ -228,7 +228,7 @@ use Etn\Utils\Helper;
                                                                                 data-etn_required="<?php echo esc_attr( $etn_field_type );?>"
                                                                                 <?php echo esc_attr( $etn_field_type ); ?>
                                                                             />
-                                                                            <label for="<?php esc_attr_e( $id, 'eventin' );?>"><?php echo html_entity_decode( $checkbox_val );?></label>
+                                                                            <label for="<?php esc_attr_e( $id, 'eventin' );?>"><?php echo esc_html( html_entity_decode( $checkbox_val ) );?></label>
                                                                         </div>
                                                                     <?php
                                                                 }

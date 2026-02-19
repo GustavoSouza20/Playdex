@@ -87,6 +87,9 @@ class AdminAssets implements AssetsInterface {
             'etn-feedback-modal-styles'    => [
                 'src' => \Wpeventin::plugin_url( 'build/css/feedback-modal-styles.css' ),
             ],
+            'etn-sf-pro-font'    => [
+                'src' => \Wpeventin::plugin_url( 'assets/css/sf-pro-font.css' ),
+            ],
         ];
 
         return apply_filters( 'etn_admin_register_styles', $styles );

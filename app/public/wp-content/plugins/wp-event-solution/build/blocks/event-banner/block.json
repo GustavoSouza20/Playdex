@@ -8,10 +8,17 @@
     "blockId": {
       "type": "string"
     },
+    "styleVariant": {
+      "type": "string",
+      "default": "style-1"
+    },
     "containerClassName": {
       "type": "string"
     },
     "eventId": {
+      "type": "string"
+    },
+    "className": {
       "type": "string"
     },
     "styles": {
@@ -36,14 +43,20 @@
           },
           ".eventin-block-container:hover": {},
           ".event-banner-image": {
-            "width": "80px",
-            "height": "80px"
+            "width": "100%",
+            "height": "auto",
+            "borderRadius": "0px",
+            "margin": "0px",
+            "padding": "0px"
           }
         },
         "Tablet": {},
         "Mobile": {}
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

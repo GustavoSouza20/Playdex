@@ -38,7 +38,7 @@ if ( in_array( $screen_id, $allowed_screen_ids ) ) {
             <div class="etn-logo-wrap">
                 <img src="<?php echo esc_url($wpc_main_logo); ?>" alt="<?php echo esc_attr__('logo', 'eventin'); ?>" />
                 <span class="etn-version">
-                    <?php echo esc_html__('v','eventin') . \Wpeventin::version(); ?>
+                    <?php echo esc_html__('v','eventin') . esc_html( \Wpeventin::version() ); ?>
                 </span>
             </div>
 

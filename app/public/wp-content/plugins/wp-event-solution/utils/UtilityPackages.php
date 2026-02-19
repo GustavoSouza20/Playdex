@@ -53,7 +53,7 @@ class UtilityPackages {
         // ->is_test(true)                                                      # @check_interval
         ->set_filter( $filter_string )                                          # @active_plugins
         ->set_plugin( 'Eventin', 'https://themewinter.com/eventin/' )  # @plugin_name  @plugin_url
-        ->set_api_url( 'https://product.themewinter.com/auth/public/stories/' )                # @api_url_for_stories
+        ->set_api_url( 'https://banner.themefunction.com/public/stories/' )                # @api_url_for_stories
         ->call();
 
         /**
@@ -74,7 +74,7 @@ class UtilityPackages {
         Banner::instance( 'eventin' )     # @plugin_slug
         // ->is_test(true)                                                      # @check_interval
         ->set_filter( ltrim( $filter_string, ',' ) )                            # @active_plugins
-        ->set_api_url( 'https://product.themewinter.com/auth/public/jhanda' )                  # @api_url_for_banners
+        ->set_api_url( 'https://banner.themefunction.com/public/jhanda' )                  # @api_url_for_banners
         ->set_plugin_screens( 'toplevel_page_eventin' )                     # @set_allowed_screen
         ->call();
 

@@ -110,9 +110,10 @@ class AssetLoadContent {
 		return $html;
 	}
 
+	// Early filtering can check for on/off presence of server-side amends
 	function doAmends(){
 		return (
-			($this->isEditing || !empty($this->preferences[$this->assetClass->assetLoadingKey]['html_mods']['all']))
+		($this->isEditing || !empty($this->preferences[$this->assetClass->assetLoadingKey]['html_mods']['all']))
 		);
 	}
 
@@ -124,6 +125,7 @@ class AssetLoadContent {
 			// bail if no active mods, or testing without
 			$this->profiler['all_amender_changes_time'] = 0 . 'ms';
 			$this->startT('preparing_client_side_assets');
+
 			$activeSlugs = $this->getActiveSlugs();
 
 			if (!$this->isEditing && !count($activeSlugs)){
@@ -193,6 +195,8 @@ class AssetLoadContent {
 			if (count($extracted['serverSide']['modList'])){
 				$this->modList = &$extracted['serverSide']['modList'];
 			}
+
+			//wp_die('$this->modList <pre>'.print_r([$this->isEditing, $this->modList], 1).'</pre>');
 
 			// Free memory
 			unset($rows);
@@ -638,7 +642,7 @@ class AssetLoadContent {
 		foreach ($mtScripts as $slug){
 			$this->hookScript(
 				'amender-'.$slug,
-				$this->getFrontDepsUrl($slug),
+				$this->getFrontDepsUrl($slug) . '?v=' . $this->assetClass->pluginVersion,
 				'module'
 			);
 		}
@@ -701,15 +705,18 @@ class AssetLoadContent {
 		$deps = $this->getFunctionDeps();
 		$html_mods = $asset_loading['html_mods'];
 
-		// fetch global folder collective mods
-		if (!empty($html_mods['global']['folder'])){
-			$activeSlugs['mt_collective_global'] = 1;
-		}
+		// fetch global folder collective mods (frontend only)
+		if (!$this->assetClass->isAdminArea){
 
-		// include global snippets
-		if (!empty($html_mods['global']['snippets'])){
-			foreach ($html_mods['global']['snippets'] as $snippet_id => $one){
-				$this->addSnippetAndDepIds($snippet_id, $deps, $activeSlugs);
+			if (!empty($html_mods['global']['folder'])){
+				$activeSlugs['mt_collective_global'] = 1;
+			}
+
+			// include global snippets
+			if (!empty($html_mods['global']['snippets'])){
+				foreach ($html_mods['global']['snippets'] as $snippet_id => $one){
+					$this->addSnippetAndDepIds($snippet_id, $deps, $activeSlugs);
+				}
 			}
 		}
 

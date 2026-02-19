@@ -8,6 +8,7 @@ use Eventin\Mails\Mail;
 use Wpeventin;
 use Eventin\Order\OrderModel;
 use Etn\Core\Attendee\Attendee_Model;
+use Etn\Utils\Helper;
 
 class OrderTicket implements HookableInterface {
     /**
@@ -16,7 +17,7 @@ class OrderTicket implements HookableInterface {
      * @return  void
      */
     public function register_hooks(): void {
-        add_action( 'eventin_order_completed', [$this, 'update_event_ticket'] );
+        add_action( 'eventin_order_completed', [$this, 'order_status_completed'] );
         add_action( 'eventin_order_status_completed', [$this, 'order_status_completed'] );
         add_action( 'eventin_order_status_failed', [$this, 'order_status_failed'] );
 
@@ -30,45 +31,186 @@ class OrderTicket implements HookableInterface {
 
         add_action( 'eventin_attendee_before_delete', [ $this, 'decrese_event_sold_ticket_after_attendee_delete' ] );
 
-
-        $is_enable_payment_timer = etn_get_option( 'ticket_purchase_timer_enable', 'off' );
-
-        if ( $is_enable_payment_timer == 'on' ) {
-            add_action( 'eventin_after_order_create', [ $this, 'temporary_hold_tickets' ] );
-            add_action( 'eventin_order_completed', [ $this, 'clear_hold_tickets_cron' ] );
-        }
-
         add_action( 'eventin_release_held_tickets', [ $this, 'release_held_tickets' ] ); // from cron
         add_action( 'eventin_release_held_seats_and_tickets', [ $this, 'release_held_seats_and_tickets' ], 10, 3 );
+        add_action( 'eventin_release_pending_seats_and_tickets', [ $this, 'eventin_release_pending_seats_and_tickets' ] ); // from cron
+
+        /**
+         * Add custom cron schedule
+         *
+         * @param array $schedules Schedules.
+         *
+         * @return array
+         */
+        add_filter( 'cron_schedules', function ( $schedules ) {
+            $schedules['every_sixty_minutes'] = [
+                'interval' => 60 * 60,
+                'display'  => 'Every 60 Minutes'
+            ];
+
+            return $schedules;
+        });
+
+        /**
+         * Schedule event to release pending seats and tickets
+         *
+         * @return void
+         */
+        add_action( 'init', function () {
+            if ( ! wp_next_scheduled( 'eventin_release_pending_seats_and_tickets' ) ) {
+                wp_schedule_event( time(), 'every_sixty_minutes', 'eventin_release_pending_seats_and_tickets' );
+            }
+        });
     }
 
     /**
-     * After booking an event ticket decrese ticket amount
+     * Release pending seats and tickets
      *
-     * @return  void
+     * @return void
      */
-    public function update_event_ticket( $order ) {
-        if ( 'completed' !== $order->status ) {
+    public function eventin_release_pending_seats_and_tickets() {
+        // Calculate timestamp for 20 minutes ago
+        $twenty_minutes_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-20 minutes' ) );
+
+        // Fetch all failed bookings from the last 20 minutes using WP_Query
+        $args = [
+            'post_type'      => 'etn-order',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'date_query'     => [
+                [
+                    'after'     => $twenty_minutes_ago,
+                    'inclusive' => true,
+                    'column'    => 'post_modified',
+                ],
+            ],
+            'meta_query'     => [
+                [
+                    'key'   => 'status',
+                    'value' => 'failed',
+                ],
+            ],
+        ];
+
+        $failed_orders_query = new \WP_Query( $args );
+
+        // Group orders by event_id for efficient processing
+        $event_orders = [];
+
+        if ( $failed_orders_query->have_posts() ) {
+            while ( $failed_orders_query->have_posts() ) {
+                $failed_orders_query->the_post();
+                $order_id = get_the_ID();
+                $event_id = get_post_meta( $order_id, 'event_id', true );
+
+                if ( ! $event_id ) {
+                    continue;
+                }
+
+                if ( ! isset( $event_orders[$event_id] ) ) {
+                    $event_orders[$event_id] = [];
+                }
+                $event_orders[$event_id][] = $order_id;
+            }
+
+            wp_reset_postdata();
+        }
+
+        // Get all events to process
+        $events_args = [
+            'post_type'      => 'etn',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+        ];
+
+        $events_query = new \WP_Query( $events_args );
+
+        if ( ! $events_query->have_posts() ) {
             return;
         }
 
-        $event = new Event_Model( $order->event_id );
+        // Process each event
+        while ( $events_query->have_posts() ) {
+            $events_query->the_post();
+            $event_id = get_the_ID();
+            $allocated_seats = [];
+            $allocated_tickets = [];
 
-        $event_tickets = $event->etn_ticket_variations;
+            // Collect allocated seats and tickets from failed orders for this event (if any)
+            if ( isset( $event_orders[$event_id] ) ) {
+                foreach ( $event_orders[$event_id] as $order_id ) {
+                    // Get allocated seats
+                    $order_seats = etn_safe_decode( get_post_meta( $order_id, 'seat_ids', true ) );
+                    if ( is_array( $order_seats ) && ! empty( $order_seats ) ) {
+                        $allocated_seats = array_merge( $allocated_seats, $order_seats );
+                    }
 
-        $updated_tickets = [];
+                    // Get allocated tickets
+                    $order_tickets = etn_safe_decode( get_post_meta( $order_id, 'tickets', true ) );
+                    if ( is_array( $order_tickets ) && ! empty( $order_tickets ) ) {
+                        foreach ( $order_tickets as $ticket ) {
+                            $ticket_slug = $ticket['ticket_slug'];
+                            $ticket_quantity = isset( $ticket['ticket_quantity'] ) ? (int) $ticket['ticket_quantity'] : 0;
 
-        if ( $event_tickets ) {
-            foreach( $event_tickets as $ticket ) {
-                $updated_ticket = $this->prepare_event_ticket( $order, $ticket );
+                            if ( ! isset( $allocated_tickets[$ticket_slug] ) ) {
+                                $allocated_tickets[$ticket_slug] = 0;
+                            }
+                            $allocated_tickets[$ticket_slug] += $ticket_quantity;
+                        }
+                    }
+                }
 
-                $updated_tickets[] = $updated_ticket;
+                // Remove duplicate seats
+                $allocated_seats = array_unique( $allocated_seats );
+            }
+
+            // Get event's pending seats
+            $pending_seats = etn_safe_decode( get_post_meta( $event_id, 'pending_seats', true ) );
+            if ( ! is_array( $pending_seats ) ) {
+                $pending_seats = [];
+            }
+
+            // If there are allocated seats from failed orders, remove them from pending seats
+            // Otherwise, clear all pending seats
+            if ( ! empty( $allocated_seats ) && ! empty( $pending_seats ) ) {
+                $seats_to_remove = array_intersect( $pending_seats, $allocated_seats );
+                if ( ! empty( $seats_to_remove ) ) {
+                    $pending_seats = array_diff( $pending_seats, $seats_to_remove );
+                    update_post_meta( $event_id, 'pending_seats', array_values( $pending_seats ) );
+                }
+            } elseif ( empty( $allocated_seats ) && ! empty( $pending_seats ) ) {
+                // No failed bookings for this event, clear all pending seats
+                update_post_meta( $event_id, 'pending_seats', [] );
+            }
+
+            // Get event tickets
+            $event_tickets = etn_safe_decode( get_post_meta( $event_id, 'etn_ticket_variations', true ) );
+
+            if ( is_array( $event_tickets ) ) {
+                $tickets_updated = false;
+
+                foreach ( $event_tickets as &$ticket ) {
+                    $ticket_slug = isset( $ticket['etn_ticket_slug'] ) ? $ticket['etn_ticket_slug'] : '';
+
+                    if ( ! empty( $allocated_tickets ) && isset( $allocated_tickets[$ticket_slug] ) ) {
+                        // Decrease pending count by allocated tickets from failed orders
+                        $pending_count = isset( $ticket['pending'] ) ? (int) $ticket['pending'] : 0;
+                        $ticket['pending'] = max( 0, $pending_count - $allocated_tickets[$ticket_slug] );
+                        $tickets_updated = true;
+                    } elseif ( empty( $allocated_tickets ) && isset( $ticket['pending'] ) && $ticket['pending'] > 0 ) {
+                        // No failed bookings for this event, set pending to 0
+                        $ticket['pending'] = 0;
+                        $tickets_updated = true;
+                    }
+                }
+
+                if ( $tickets_updated ) {
+                    update_post_meta( $event_id, 'etn_ticket_variations', $event_tickets );
+                }
             }
         }
-        
-        $event->update([ 'etn_ticket_variations' => $updated_tickets ]);
 
-        $this->update_booked_seat($event, $order);
+        wp_reset_postdata();
     }
 
     /**
@@ -96,10 +238,34 @@ class OrderTicket implements HookableInterface {
                 $updated_tickets[] = $updated_ticket;
             }
         }
-        
+
         $event->update([ 'etn_ticket_variations' => $updated_tickets ]);
 
         $this->update_booked_seat($event, $order);
+        $this->update_pending_seat($event, $order);
+
+        $booked_seats   = etn_safe_decode(get_post_meta($order->id, 'seat_ids', true));
+        $booked_tickets = $order->tickets;
+        $formatted_booked_tickets = [];
+        if (!empty($booked_tickets)) {
+            foreach ($booked_tickets as $ticket) {
+                $formatted_booked_tickets[] = [
+                    'ticket_slug' => $ticket['ticket_slug'],
+                    'ticket_quantity' => $ticket['ticket_quantity']
+                ];
+            }
+        }
+
+        \Etn\Utils\Helper::increase_count_by_ticket_slug($formatted_booked_tickets,$event->id);
+        
+
+        $data = [
+            $event->id,
+            $booked_seats,
+            $formatted_booked_tickets,
+        ];
+
+        $this->clear_hold_seats_and_tickets_cron($data);
     }
 
     /**
@@ -112,10 +278,12 @@ class OrderTicket implements HookableInterface {
      */
     private function prepare_event_ticket( $order, $event_ticket ) {
         $order_tickets = $order->tickets;
+        $event_id = $order->event_id ?? null;
+        $sold_tickets = $event_id ? (array)Helper::etn_get_sold_tickets_by_event( $event_id ) : [];
 
         foreach( $order_tickets as $ticket ) {
             if ( $ticket['ticket_slug'] === $event_ticket['etn_ticket_slug'] ) {
-                $event_ticket['etn_sold_tickets'] = $event_ticket['etn_sold_tickets'] + $ticket['ticket_quantity'];
+                $event_ticket['etn_sold_tickets'] = $sold_tickets[$ticket['ticket_slug']] ?? 0;
                 $event_ticket['pending'] = isset( $event_ticket['pending'] ) ? $event_ticket['pending'] - $ticket['ticket_quantity'] : 0;
                 if ( $event_ticket['pending'] < 0 ) {
                     $event_ticket['pending'] = 0;
@@ -150,6 +318,31 @@ class OrderTicket implements HookableInterface {
         $event_seats = implode( ',', array_unique( $event_seats ) );
 
         update_post_meta( $event->id, '_etn_seat_unique_id', $event_seats );
+    }
+
+    /**
+     * Update pending seats after booking
+     *
+     * @param   Event_Model  $event  [$event description]
+     * @param   Order_Model  $order  [$order description]
+     *
+     * @return  void
+     */
+    public function update_pending_seat( $event, $order ) {
+        $order_seats = $order->seat_ids;
+
+        if ( empty( $order_seats ) ) {
+            return;
+        }
+
+        $pending_seats = etn_safe_decode(get_post_meta($event->id, 'pending_seats', true));
+        if (! is_array($pending_seats)) {
+            $pending_seats = [];
+        }
+
+        $pending = array_diff($pending_seats, $order_seats);
+        
+        update_post_meta($event->id, 'pending_seats', $pending);
     }
 
     /**
@@ -190,10 +383,13 @@ class OrderTicket implements HookableInterface {
 
         $event_tickets = $event->etn_ticket_variations;
 
+        $event_id = $attendee->etn_event_id ?? null;
+        $sold_tickets = !empty($event_id) ? (array)Helper::etn_get_sold_tickets_by_event($event_id) : [];
+
         if ( $event_tickets ) {
             foreach( $event_tickets as &$ticket ) {
                 if ( $ticket['etn_ticket_name'] === $attendee->ticket_name ) {
-                    $ticket['etn_sold_tickets'] = $ticket['etn_sold_tickets'] + 1;
+                    $ticket['etn_sold_tickets'] = $sold_tickets[$ticket['etn_ticket_slug']] ?? 0;
                 }
             }
         }
@@ -218,13 +414,31 @@ class OrderTicket implements HookableInterface {
 
         $event = new Event_Model( $order->event_id );
 
+        $booked_tickets = $order->tickets;
+        $formatted_booked_tickets = [];
+        if ( !empty($booked_tickets) ) {
+            foreach ($booked_tickets as $ticket) {
+                $formatted_booked_tickets[] = [
+                    'ticket_slug' => $ticket['ticket_slug'],
+                    'ticket_quantity' => $ticket['ticket_quantity']
+                ];
+            }
+        }
+
+        \Etn\Utils\Helper::decrease_count_by_ticket_slug($formatted_booked_tickets,$event->id);
+
+
+
         $event_tickets = $event->etn_ticket_variations;
+
+        $event_id = $order->event_id ?? null;
+        $sold_tickets = !empty($event_id) ? (array)Helper::etn_get_sold_tickets_by_event($event_id) : [];
 
         if ( $event_tickets ) {
             foreach( $event_tickets as &$ticket ) {
                 $ticket_amount = $order->get_total_ticket_by_ticket( $ticket['etn_ticket_slug'] );
                 if ( $ticket_amount > 0 ) {
-                    $ticket['etn_sold_tickets'] = $ticket['etn_sold_tickets'] - $ticket_amount;
+                    $ticket['etn_sold_tickets'] = $sold_tickets[$ticket['etn_ticket_slug']] ?? 0;
                 }
             }
         }
@@ -263,11 +477,15 @@ class OrderTicket implements HookableInterface {
 
         $event_tickets = $event->etn_ticket_variations;
 
+
+        $event_id = $order->event_id ?? null;
+        $sold_tickets = !empty($event_id) ? (array)Helper::etn_get_sold_tickets_by_event($event_id) : [];
+
         if ( $event_tickets ) {
             foreach( $event_tickets as &$ticket ) {
                 $ticket_amount = $order->get_total_ticket_by_ticket( $ticket['etn_ticket_slug'] );
                 if ( $ticket_amount > 0 ) {
-                    $ticket['etn_sold_tickets'] = $ticket['etn_sold_tickets'] - $ticket_amount;
+                    $ticket['etn_sold_tickets'] = $sold_tickets[$ticket['etn_ticket_slug']] ?? 0;
                 }
             }
         }
@@ -278,7 +496,7 @@ class OrderTicket implements HookableInterface {
 
         // Update seat on refunded.
         $event_seats = get_post_meta( $event->id, '_etn_seat_unique_id', true );
-        $order_seats = $order->seat_ids;
+        $order_seats = etn_safe_decode(get_post_meta( $order->id, 'seat_ids', true ));
 
         if ( $order_seats ) {
             $event_seats = explode(',', $event_seats );
@@ -305,11 +523,14 @@ class OrderTicket implements HookableInterface {
 
         $event_tickets = $event->etn_ticket_variations;
 
+        $event_id = $order->event_id ?? null;
+        $sold_tickets = !empty($event_id) ? (array)Helper::etn_get_sold_tickets_by_event($event_id) : [];
+
         if ( $event_tickets ) {
             foreach( $event_tickets as &$ticket ) {
                 $ticket_amount = $order->get_total_ticket_by_ticket( $ticket['etn_ticket_slug'] );
                 if ( $ticket_amount > 0 ) {
-                    $ticket['etn_sold_tickets'] = $ticket['etn_sold_tickets'] - $ticket_amount;
+                    $ticket['etn_sold_tickets'] = $sold_tickets[$ticket['etn_ticket_slug']] ?? 0;
                 }
             }
         }
@@ -350,10 +571,14 @@ class OrderTicket implements HookableInterface {
         // Decrease sold ticket quantity from event
         $event_tickets = $event->etn_ticket_variations;
 
+
+        $event_id = $attendee->etn_event_id ?? null;
+        $sold_tickets = !empty($event_id) ? (array)Helper::etn_get_sold_tickets_by_event($event_id) : [];
+
         if ( $event_tickets ) {
             foreach( $event_tickets as &$ticket ) {
                 if ( $ticket['etn_ticket_name'] == $attendee->ticket_name ) {
-                    $ticket['etn_sold_tickets'] = $ticket['etn_sold_tickets'] - 1;
+                    $ticket['etn_sold_tickets'] = $sold_tickets[$ticket['etn_ticket_slug']] ?? 0;
                 }
             }
         }
@@ -387,28 +612,9 @@ class OrderTicket implements HookableInterface {
     }
 
     /**
-     * Temporary hold tickets after order created
-     *
-     * @param   OrderModel  $order  The order need to hold tickets
-     *
-     * it's ok
-     * @return  void
-     */
-    public function temporary_hold_tickets( OrderModel $order ) {
-        if ( 'pending' !== $order->status ) {
-            return;
-        }
-
-        $remaining_time_to_pay = get_post_meta( $order->id, 'remaining_time_to_pay', true );        
-        wp_schedule_single_event( time() + ( (int)$remaining_time_to_pay ), 'eventin_release_held_tickets', [ $order->id ] );
-    }
-
-    /**
      * Release held tickets after order status changed to pending
      *
      * @param   integer  $order_id  The order ID
-     *
-     * ok
      * 
      * @return  void
      */
@@ -438,17 +644,17 @@ class OrderTicket implements HookableInterface {
     /**
      * Release held seats and tickets
      *
-     * @param   integer  $order_id  The order ID
-     * 
+     * @param   integer  $event_id  The event ID
+     *
      * @param   array    $seat_ids  The seat IDs to release
-     * 
+     *
      * @param   array    $booked_tickets  The booked tickets to release
      *
      * @return  void
      */
-    public function release_held_seats_and_tickets( $event_id, $seat_ids, $booked_tickets ) {
-        $event_tickets = maybe_unserialize( get_post_meta( $event_id, 'etn_ticket_variations', true ) );
-        $pending_seats = maybe_unserialize( get_post_meta( $event_id, 'pending_seats', true ));
+    public function release_held_seats_and_tickets( $event_id, $seat_ids = [], $booked_tickets = [] ) {
+        $event_tickets = etn_safe_decode( get_post_meta( $event_id, 'etn_ticket_variations', true ) );
+        $pending_seats = etn_safe_decode( get_post_meta( $event_id, 'pending_seats', true ));
 
         if ( ! is_array( $pending_seats ) ) {
             $pending_seats = [];
@@ -487,7 +693,11 @@ class OrderTicket implements HookableInterface {
      *
      * @return  void
      */
-    public function clear_hold_tickets_cron( $order ) {
-        wp_clear_scheduled_hook( 'eventin_release_held_tickets', [ $order->id ] );
+    // public function clear_hold_tickets_cron( $order ) {
+    //     wp_clear_scheduled_hook( 'eventin_release_held_tickets', [ $order->id ] );
+    // }
+
+    public function clear_hold_seats_and_tickets_cron( $data ) {
+        wp_clear_scheduled_hook( 'eventin_release_held_seats_and_tickets', $data );
     }
 }

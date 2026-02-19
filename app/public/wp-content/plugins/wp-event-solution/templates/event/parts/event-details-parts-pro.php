@@ -133,12 +133,15 @@ class EventDetailsPartsPro {
 												$schedule_meta = get_post_meta($single_schedule_id);
 												$schedule_date = !empty( $schedule_meta['etn_schedule_date'][0] ) ? date_i18n(\Etn\Core\Event\Helper::instance()->etn_date_format(), strtotime($schedule_meta['etn_schedule_date'][0])) : "";
 												$active_class = (($i == 0) ? 'etn-active' : ' ');
+												$hide_date_on_event_page = get_post_meta($post->ID, 'hide_date_on_event_page', true);
 												?>
         <li>
             <a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>'
                 data-id='tab<?php echo esc_attr($i); ?>'>
                 <span class='etn-date'><?php echo esc_html($post->post_title); ?></span>
-                <span class='etn-day'><?php echo esc_html($schedule_date); ?></span>
+                 <?php if ( empty($hide_date_on_event_page) ) : ?>
+                    <span class='etn-date'><?php echo esc_html($schedule_date); ?></span>
+                 <?php endif; ?>
             </a>
         </li>
         <?php endforeach; ?>
@@ -151,7 +154,8 @@ class EventDetailsPartsPro {
 												$j++;
 												$schedule_meta  = get_post_meta($single_schedule_id);
 												$schedule_date  = strtotime($schedule_meta['etn_schedule_date'][0]);
-												$schedule_topics = !empty($schedule_meta['etn_schedule_topics'][0]) ? unserialize($schedule_meta['etn_schedule_topics'][0]) : [];
+												$schedule_topics_raw = !empty($schedule_meta['etn_schedule_topics'][0]) ? etn_safe_decode($schedule_meta['etn_schedule_topics'][0]) : [];
+												$schedule_topics = is_array($schedule_topics_raw) ? $schedule_topics_raw : [];
 												$schedule_date  = date_i18n("d M", $schedule_date);
 												$active_class   = (($j == 0) ? 'tab-active' : ' ');
 												$etn_show_speaker_with_schedule = get_post_meta( $single_event_id, 'etn_select_speaker_schedule_type', true );
@@ -179,7 +183,7 @@ class EventDetailsPartsPro {
 																						if(!empty($etn_schedule_start_time) || !empty( $etn_schedule_end_time )){
 																								?>
                     <span class='etn-schedule-time'>
-                        <?php echo esc_html($etn_schedule_start_time) . $dash_sign . esc_html($etn_schedule_end_time); ?>
+                        <?php echo esc_html($etn_schedule_start_time) . esc_html($dash_sign) . esc_html($etn_schedule_end_time); ?>
                     </span>
 
                     <?php
@@ -204,7 +208,7 @@ class EventDetailsPartsPro {
                                 <i class="etn-icon etn-plus"></i>
                                 <?php endif; ?>
                             </h4>
-                            <?php echo Helper::render(trim( $etn_schedule_objective )); ?>
+                            <?php echo wp_kses_post( Helper::render(trim( $etn_schedule_objective )) ); ?>
                             <?php  if($etn_show_speaker_with_schedule === 'schedule_with_speaker') : ?>
                             <div class="etn-acccordion-contents">
                                 <div class='etn-schedule-content'>

@@ -27,7 +27,7 @@ class PaymentFactory {
             return new $methods[$payment_methods];
         }
 
-        throw new Exception( __( 'Unknown payment method.', 'eventin' ) );
+        throw new Exception( esc_html__( 'Unknown payment method.', 'eventin' ) );
     }
 
     /**

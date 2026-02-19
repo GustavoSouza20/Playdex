@@ -19,9 +19,9 @@ if(!empty($etn_faqs)):
                             ?>
         </h4>
         <p class="etn-acccordion-contents <?php echo esc_attr( $acc_class ); ?>">
-            <?php 
+            <?php
                                 if ( has_blocks( $faq["etn_faq_content"] ) ) {
-                                    echo do_blocks( $faq["etn_faq_content"] );
+                                    echo wp_kses_post( do_blocks( $faq["etn_faq_content"] ) );
                                 } else {
                                     echo esc_html( $faq["etn_faq_content"] );
                                 }

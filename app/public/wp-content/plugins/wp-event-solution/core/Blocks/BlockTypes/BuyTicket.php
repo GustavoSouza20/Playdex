@@ -29,6 +29,8 @@ class BuyTicket extends AbstractBlock
      */
     protected function render($attributes, $content, $block)
     {
+        $style_variant = ! empty($attributes['styleVariant']) ? $attributes['styleVariant'] : 'style-1';
+        
         $container_class = ! empty($attributes['containerClassName']) ? $attributes['containerClassName'] : '';
         $styles = ! empty( $attributes['styles'] ) ? $attributes['styles'] : [];
         // Check if we're in editor/admin
@@ -62,9 +64,9 @@ class BuyTicket extends AbstractBlock
 
         ob_start();
 
-        
+
         ?>
-        <?php echo $this->render_frontend_css( $styles, $container_class ); ?>
+        <?php echo $this->render_frontend_css( $styles, esc_attr( $container_class ) ); ?>
         <?php
         require_once Wpeventin::templates_dir() . 'event/parts/buy-ticket.php';
         ?>

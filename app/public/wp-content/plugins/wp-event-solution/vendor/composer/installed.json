@@ -2,24 +2,23 @@
     "packages": [
         {
             "name": "themewinter/email-notification-sdk",
-            "version": "dev-main",
-            "version_normalized": "dev-main",
+            "version": "dev-emarat/update-flow-calculation-logic",
+            "version_normalized": "dev-emarat/update-flow-calculation-logic",
             "source": {
                 "type": "git",
                 "url": "git@github.com:themewinter/email-notification-sdk.git",
-                "reference": "7099c95ee6fac19faf150c7461108999527a1a00"
+                "reference": "ef5db6e2bd7a33354ed3b591171a34f557449e8e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/themewinter/email-notification-sdk/zipball/7099c95ee6fac19faf150c7461108999527a1a00",
-                "reference": "7099c95ee6fac19faf150c7461108999527a1a00",
+                "url": "https://api.github.com/repos/themewinter/email-notification-sdk/zipball/ef5db6e2bd7a33354ed3b591171a34f557449e8e",
+                "reference": "ef5db6e2bd7a33354ed3b591171a34f557449e8e",
                 "shasum": ""
             },
             "require-dev": {
                 "phpunit/phpunit": "^10"
             },
-            "time": "2025-11-10T05:07:54+00:00",
-            "default-branch": true,
+            "time": "2025-12-28T09:27:27+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -32,7 +31,7 @@
             },
             "description": "Reusable WordPress plugin's email notification flow handler package with REST API",
             "support": {
-                "source": "https://github.com/themewinter/email-notification-sdk/tree/main",
+                "source": "https://github.com/themewinter/email-notification-sdk/tree/emarat/update-flow-calculation-logic",
                 "issues": "https://github.com/themewinter/email-notification-sdk/issues"
             },
             "install-path": "../themewinter/email-notification-sdk"

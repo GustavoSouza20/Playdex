@@ -9,7 +9,7 @@ if (has_post_thumbnail()) {
     
         <?php do_action( 'etn_before_event_archive_thumbnail' ); ?>
 
-        <a href="<?php the_permalink(); ?>" aria-label="<?php the_title(); ?>">
+        <a href="<?php the_permalink(); ?>" aria-label="<?php echo esc_attr( get_the_title() ); ?>">
             <?php the_post_thumbnail(); ?>
         </a>
 

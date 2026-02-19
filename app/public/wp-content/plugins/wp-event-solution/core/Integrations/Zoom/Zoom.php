@@ -98,12 +98,26 @@ class Zoom implements MeetingPlatformInterface {
         $access_token = ZoomToken::get();
         $zoom         = new ZoomClient( $access_token );
 
+        
+
         if(isset($args['end_date']) && isset($args['end_time'])){
             // Combine date and time into one string
             $datetime = $args['end_date'] . ' ' . $args['end_time'];
 
             // Set timezone
             $timezone = $args['timezone'];
+
+            // - Normalize timezone format (convert UTC+6 to +06:00)
+            // - Added timezone normalization code (lines 113-119) that:
+            // - Detects timezone formats like "UTC+6", "UTC-5", etc.
+            // - Converts them to PHP-compatible format: "+06:00", "-05:00", etc.
+            // - Handles decimal offsets like "UTC+5.5" → "+05:30"
+            if (preg_match('/^UTC([+-]\d+(?:\.\d+)?)$/', $timezone, $matches)) {
+                $offset = floatval($matches[1]);
+                $hours = floor(abs($offset));
+                $minutes = ($offset - floor($offset)) * 60;
+                $timezone = sprintf('%s%02d:%02d', $offset >= 0 ? '+' : '-', $hours, $minutes);
+            }
 
             // Create DateTime object with timezone
             $dt = new DateTime($datetime, new DateTimeZone($timezone));
@@ -177,7 +191,6 @@ class Zoom implements MeetingPlatformInterface {
             $tz = new \DateTimeZone( $tz_input );
         } catch (\Exception $e) {
             // Fallback to UTC on invalid timezone
-            error_log('Invalid timezone provided: ' . $timezone . ' | Fallback to UTC');
             $tz = new \DateTimeZone('UTC');
         }
 

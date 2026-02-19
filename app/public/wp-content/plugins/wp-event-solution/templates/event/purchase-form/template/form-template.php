@@ -100,7 +100,7 @@
         } else {
             ?>
             <small>
-            <?php echo esc_html__('Please', 'eventin'); ?> <a href="<?php echo wp_login_url( get_permalink( ) ); ?>"><?php echo esc_html__( "Login", "eventin" ); ?></a> <?php echo esc_html__(' to buy ticket!', "eventin"); ?>
+            <?php echo esc_html__('Please', 'eventin'); ?> <a href="<?php echo esc_url( wp_login_url( get_permalink( ) ) ); ?>"><?php echo esc_html__( "Login", "eventin" ); ?></a> <?php echo esc_html__(' to buy ticket!', "eventin"); ?>
             </small>
             <?php
         }

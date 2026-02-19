@@ -14,6 +14,13 @@
     "eventId": {
       "type": "string"
     },
+    "className": {
+      "type": "string"
+    },
+    "styleVariant": {
+      "type": "string",
+      "default": "style-1"
+    },
     "styles": {
       "type": "object",
       "default": {
@@ -47,6 +54,14 @@
             "gap": "8px",
             "flexWrap": "wrap"
           },
+          ".etn-social-title": {
+            "color": "#232323",
+            "fontSize": "18px",
+            "fontWeight": "400",
+            "lineHeight": "1.5",
+            "margin": "0px",
+            "padding": "0px"
+          },
           ".share-icon": {
             "marginRight": "10px",
             "paddingRight": "30px",
@@ -79,6 +94,9 @@
         "Mobile": {}
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

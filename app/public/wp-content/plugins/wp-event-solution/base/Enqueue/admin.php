@@ -98,7 +98,7 @@ class Admin {
         $screen    = get_current_screen();
         $screen_id = $screen->id;
         
-        if ( 'toplevel_page_eventin' === $screen_id ) {
+        if ( 'toplevel_page_eventin' === $screen_id && class_exists( 'EventinAI' ) ) {
             wp_enqueue_style( 'etn-ai' );
             wp_enqueue_script( 'etn-ai' );
         }
@@ -133,6 +133,7 @@ class Admin {
         $localize_data = etn_get_locale_data();
         wp_localize_script( 'etn-onboard-index', 'localized_data_obj', $localize_data );
         wp_enqueue_style( 'etn-icon' );
+        wp_enqueue_style( 'etn-sf-pro-font' );
         // Enque block editor style in events create and edit pages only
         if ( isset( $_GET['page'] ) && $_GET['page'] === 'eventin' ) {
             wp_enqueue_style( 'wp-block-editor' );

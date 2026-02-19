@@ -41,7 +41,7 @@ class EventTag extends AbstractBlock {
 
         ob_start();
         ?>
-        <?php echo $this->render_frontend_css( $styles, $container_class ); ?>
+        <?php echo $this->render_frontend_css( $styles, esc_attr( $container_class ) ); ?>
         <?php
         require_once Wpeventin::templates_dir() . 'event/parts/event-tag.php';
         ?>

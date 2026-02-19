@@ -9,10 +9,17 @@
     "blockId": {
       "type": "string"
     },
+    "styleVariant": {
+      "type": "string",
+      "default": "style-1"
+    },
     "containerClassName": {
       "type": "string"
     },
     "eventId": {
+      "type": "string"
+    },
+    "className": {
       "type": "string"
     },
     "styles": {
@@ -44,18 +51,27 @@
             "padding": "0px 0px 0px 0px",
             "lineHeight": 1.5
           },
+          ".etn-se-speaker-item .etn-speaker-name a": {
+            "color": "#010b14"
+          },
           ".etn-speaker-designation p.eventin-speaker-designation": {
             "fontSize": "14px",
             "color": "#585858",
             "margin": "0px 0px 0px 0px",
             "padding": "0px 0px 0px 0px",
             "lineHeight": 1
+          },
+          ".etn-social a .etn-icon": {
+            "fontSize": "12px"
           }
         },
         "Tablet": {},
         "Mobile": {}
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

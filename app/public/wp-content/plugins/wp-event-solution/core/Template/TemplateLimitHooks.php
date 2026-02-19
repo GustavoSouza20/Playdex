@@ -66,8 +66,8 @@ class TemplateLimitHooks implements HookableInterface {
 
             if ( $total >= self::MAX_TEMPLATES_FOR_EVENTIN_FREE && empty( $postarr['ID'] ) ) {
                 wp_die(
-                    __('You cannot create more than 1 template for landing page without eventin-pro.', 'eventin'),
-                    __('Template Limit Reached', 'eventin'),
+                    esc_html__('You cannot create more than 1 template for landing page without eventin-pro.', 'eventin'),
+                    esc_html__('Template Limit Reached', 'eventin'),
                     ['back_link' => true]
                 );
             }

@@ -185,9 +185,12 @@ abstract class AbstractBlock {
      * @return string[]|null
      */
     protected function get_block_type_style() {
-        $this->register_style( 'eventin-blocks-style-' . $this->block_name, $this->get_block_asset_build_path( $this->block_name, 'css' ), [], 'all', true );
+        // Register the main blocks style if not already registered
+        if ( ! wp_style_is( 'etn-blocks-style', 'registered' ) ) {
+            wp_register_style( 'etn-blocks-style', \Wpeventin::plugin_url() . 'build/css/etn-block-styles.css', [], \Wpeventin::version(), 'all' );
+        }
 
-        return [ 'eventin-blocks-style', 'wc-blocks-style-' . $this->block_name ];
+        return [ 'etn-blocks-style' ];
     }
 
     /**
@@ -279,7 +282,8 @@ abstract class AbstractBlock {
             $css .= "}\n";
         }
 
-        return $css;
+        $safe_css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );
+        return $safe_css;
     }
 
     /**
@@ -366,6 +370,14 @@ abstract class AbstractBlock {
 
         if ( file_exists( $path ) ) {
             return $path;
+        }
+
+        // Fallback to source directory if build directory doesn't exist
+        $source_dir = Wpeventin::plugin_dir() . 'src/blocks/';
+        $source_path = $source_dir . $this->block_name . '/block.json';
+        
+        if ( file_exists( $source_path ) ) {
+            return $source_path;
         }
 
         return false;

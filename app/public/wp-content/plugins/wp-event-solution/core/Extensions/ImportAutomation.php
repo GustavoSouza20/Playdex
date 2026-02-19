@@ -22,6 +22,83 @@ class ImportAutomation {
 
         $automation_flows = [
             [
+                "name" => "Send Email To All Attendees",
+                "trigger" => "send_email_to_all_attendees",
+                "flow_config" => [
+                    "nodes" => [
+                        [
+                            "id" => "node_1",
+                            "type" => "trigger",
+                            "name" => "trigger",
+                            "data" => [
+                                "label" => "trigger: send_email_to_all_attendees",
+                                "subtitle" => "Send Email To All Attendees",
+                                "triggerValue" => "send_email_to_all_attendees"
+                            ],
+                            "position" => [
+                                "x" => 200,
+                                "y" => 50
+                            ]
+                        ],
+                        [
+                            "id" => "node_2",
+                            "type" => "end",
+                            "name" => "end",
+                            "data" => [
+                                "label" => "end_flow",
+                                "subtitle" => "End execution path"
+                            ],
+                            "position" => [
+                                "x" => 221.46762850701441,
+                                "y" => 410
+                            ]
+                        ],
+                        [
+                            "id" => "node_3",
+                            "type" => "action",
+                            "name" => "email",
+                            "data" => [
+                                "actionType" => "send_email",
+                                "label" => "send_email",
+                                "subtitle" => "Subject: Thanks for Joining Us -  Here\u2019...",
+                                "receiverType" => "attendee_email",
+                                "from" => "admin@example.com",
+                                "subject" => "Thanks for Joining Us -  Here\u2019s What\u2019s Next",
+                                "body" => "<p>Hi Attendees ,<\/p><p>Thanks for attending \"{%event_title%}\". We appreciate your time and hope the session delivered real value.<\/p><p>&nbsp;<\/p><p>If you would like updates on future sessions or have feedback, reply directly to this email. we review every message.<\/p><p>&nbsp;<\/p><p>Thanks again,<\/p>",
+                                "processed_session_ids" => []
+                            ],
+                            "position" => [
+                                "x" => 210.73381425350721,
+                                "y" => 230
+                            ]
+                        ]
+                    ],
+                    "edges" => [
+                        [
+                            "id" => "edge_node_1-node_3",
+                            "type" => "smoothstep",
+                            "markerEnd" => [
+                                "type" => "arrowclosed"
+                            ],
+                            "source" => "node_1",
+                            "target" => "node_3",
+                            "data" => []
+                        ],
+                        [
+                            "id" => "edge_node_3-node_2",
+                            "type" => "smoothstep",
+                            "markerEnd" => [
+                                "type" => "arrowclosed"
+                            ],
+                            "source" => "node_3",
+                            "target" => "node_2",
+                            "data" => []
+                        ]
+                    ]
+                ],
+                "status" => "draft"
+            ],
+            [
                 'name' => 'Purchase Email Automation For Attendee',
                 'trigger' => 'event_ticket_purchase',
                 'flow_config' => [
@@ -440,6 +517,111 @@ class ImportAutomation {
             }
 
             update_option( 'etn_email_automation_migrated', true );           
+        } catch ( Exception $e ) {
+            $result['errors'][] = 'Failed to create service: ' . $e->getMessage();
+        }
+
+        return $result;
+    }
+
+    /**
+     * update automation flow
+     */
+    public static function update_automation_flows() {
+        $result = array(
+            'flow_ids' => array(),
+            'errors'   => array(),
+        );
+
+        $automation_flows = [
+            [
+                "name" => "Send Email To All Attendees",
+                "trigger" => "send_email_to_all_attendees",
+                "flow_config" => [
+                    "nodes" => [
+                        [
+                            "id" => "node_1",
+                            "type" => "trigger",
+                            "name" => "trigger",
+                            "data" => [
+                                "label" => "trigger: send_email_to_all_attendees",
+                                "subtitle" => "Send Email To All Attendees",
+                                "triggerValue" => "send_email_to_all_attendees"
+                            ],
+                            "position" => [
+                                "x" => 200,
+                                "y" => 50
+                            ]
+                        ],
+                        [
+                            "id" => "node_2",
+                            "type" => "end",
+                            "name" => "end",
+                            "data" => [
+                                "label" => "end_flow",
+                                "subtitle" => "End execution path"
+                            ],
+                            "position" => [
+                                "x" => 221.46762850701441,
+                                "y" => 410
+                            ]
+                        ],
+                        [
+                            "id" => "node_3",
+                            "type" => "action",
+                            "name" => "email",
+                            "data" => [
+                                "actionType" => "send_email",
+                                "label" => "send_email",
+                                "subtitle" => "Subject: Thanks for Joining Us -  Here\u2019...",
+                                "receiverType" => "attendee_email",
+                                "from" => "admin@example.com",
+                                "subject" => "Thanks for Joining Us -  Here\u2019s What\u2019s Next",
+                                "body" => "<p>Hi Attendees ,<\/p><p>Thanks for attending \"{%event_title%}\". We appreciate your time and hope the session delivered real value.<\/p><p>&nbsp;<\/p><p>If you would like updates on future sessions or have feedback, reply directly to this email. we review every message.<\/p><p>&nbsp;<\/p><p>Thanks again,<\/p>",
+                                "processed_session_ids" => []
+                            ],
+                            "position" => [
+                                "x" => 210.73381425350721,
+                                "y" => 230
+                            ]
+                        ]
+                    ],
+                    "edges" => [
+                        [
+                            "id" => "edge_node_1-node_3",
+                            "type" => "smoothstep",
+                            "markerEnd" => [
+                                "type" => "arrowclosed"
+                            ],
+                            "source" => "node_1",
+                            "target" => "node_3",
+                            "data" => []
+                        ],
+                        [
+                            "id" => "edge_node_3-node_2",
+                            "type" => "smoothstep",
+                            "markerEnd" => [
+                                "type" => "arrowclosed"
+                            ],
+                            "source" => "node_3",
+                            "target" => "node_2",
+                            "data" => []
+                        ]
+                    ]
+                ],
+                "status" => "draft"
+            ],
+        ];
+        try {
+            foreach ( $automation_flows as $key => $automation_flow ) {                
+                $flow = new Flow( 'eve',0 );
+                $flow->set_props( $automation_flow );
+                $flow_id = $flow->save();
+                if ( $flow_id ) {
+                    $result['flow_ids'][] = $flow_id;
+                }
+            }
+
         } catch ( Exception $e ) {
             $result['errors'][] = 'Failed to create service: ' . $e->getMessage();
         }

@@ -97,10 +97,10 @@ class Payment_Timer {
                     container.insertBefore(timerBox, container.firstChild);
 
 
-                    let is_payment_timer_enabled = "<?php echo (etn_get_option( 'ticket_purchase_timer_enable', 'off' )); ?>";
+                    let is_payment_timer_enabled = "<?php echo esc_js( etn_get_option( 'ticket_purchase_timer_enable', 'off' ) ); ?>";
 
                     if( is_payment_timer_enabled == 'on'){
-                        let initial_time = <?php echo (etn_get_option( 'ticket_purchase_timer', 10 )* 60); ?>;
+                        let initial_time = <?php echo absint( etn_get_option( 'ticket_purchase_timer', 10 ) * 60 ); ?>;
 
                     let timeLeft = <?php echo (int) $time_left; ?>;
 
@@ -118,7 +118,7 @@ class Payment_Timer {
                     const interval = setInterval(function() {
                         if (timeLeft <= 0) {
                             clearInterval(interval);
-                            window.location.href = "<?php echo wc_get_cart_url(); ?>?eventin_payment_time_expired=1";
+                            window.location.href = "<?php echo esc_url( wc_get_cart_url() ); ?>?eventin_payment_time_expired=1";
                             return;
                         }
 

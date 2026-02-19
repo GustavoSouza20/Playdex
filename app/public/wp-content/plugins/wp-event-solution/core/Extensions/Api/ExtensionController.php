@@ -140,7 +140,7 @@ class ExtensionController extends WP_REST_Controller {
             etn_update_option('etn_ai_api',$status??null);
         }
 
-        if ( $name == 'eventin-surecart-addon' ) {
+        if ( $name == 'eventin-addon-for-surecart' ) {
             etn_update_option('etn_surecart_enabled',$status=='on'?true:false);
             if($status=='off'){
                 etn_update_option('surecart_status',false);

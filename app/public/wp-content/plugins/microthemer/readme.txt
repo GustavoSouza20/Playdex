@@ -4,7 +4,7 @@ Contributors: bastywebb, joseluiscruz, ahrale
 Donate link: http://themeover.com/microthemer/
 Tags: css, customize, visual editor, google fonts, responsive
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2 or later
@@ -79,6 +79,53 @@ I've been happily developing Microthemer and supporting users of varying technic
 
 == Changelog ==
 
+= 7.5.3.6 (Dec 31st, 2025) =
+
+# Bugs Fixed (Amender)
+* Compatibility issue with various page builders when enabling a server-side edit if the builder loaded using a frontend URL with an editor=x parameter, rather than running in the admin area.
+
+= 7.5.3.5 (Dec 19th, 2025) =
+
+# Bugs Fixed (Amender)
+* Compatibility issue with Beaver Builder.
+* Additional compatibility fix for Bricks needed.
+
+= 7.5.3.4 (Dec 18th, 2025) =
+
+# Bugs Fixed (Amender)
+* Undoing an attribute removal did not restore it live (a refresh was required).
+
+# Bugs Fixed (Microthemer & Amender)
+* The folder numbers indicating total selectors were removed when using the "Undo" button.
+
+= 7.5.3.3 (Dec 16th, 2025) =
+
+# Bugs Fixed (Amender)
+* Global server-side changes were affecting the admin area instead of just the frontend.
+* Amendments didn't work with certain pseudo-elements / selectors e.g. ::before. These are stripped now.
+
+= 7.5.3.1 (Dec 15th, 2025) =
+
+# Bugs Fixed (Microthemer & Amender)
+* When using the radio buttons to select an alternative selector, the focus jumped back to the first item.
+
+# Bugs Fixed (Amender)
+* Removing an HTML attribute server-side did not work.
+* Moving an element server-side did not work.
+* Amender could run when Bricks editor was active, causing errors in the interface.
+
+= 7.5.2.9 (Dec 5th, 2025) =
+
+# Enhancement (Microthemer & Amender)
+* New switch to prioritise AI assistant speed vs thinking time.
+* Improved AI reliability - less formatting errors resulting in "AI error" message.
+
+= 7.5.2.8 (Nov 28th, 2025) =
+
+# Bugs fixed (Amender)
+* The code editor was uneditable when copying a selector or folder.
+* The message to signal a snippet is synced did not immediately show when copying a selector.
+
 = 7.5.2.8 (Nov 19th, 2025) =
 
 # Enhancements (Amender)
@@ -87,6 +134,11 @@ I've been happily developing Microthemer and supporting users of varying technic
 
 # Bugs fixed (Microthemer & Amender)
 * PHP warning due to missing sprite image.
+
+= 7.5.2.5 (Oct 30th, 2025) =
+
+# Change (Microthemer & Amender)
+* Reorganised some PHP class methods.
 
 = 7.5.2.4 (Oct 18th, 2025) =
 

@@ -49,8 +49,8 @@ class EventTitle extends AbstractBlock {
 
         ob_start();
         ?>
-        <?php echo $this->render_frontend_css( $styles, $container_class ); ?>
-        
+        <?php echo $this->render_frontend_css( $styles, esc_attr( $container_class ) ); ?>
+
         <div class="<?php echo esc_attr( $container_class ); ?>">
             <div class="eventin-block-container">
                 <<?php echo esc_attr($tag); ?> class="etn-event-entry-title"><?php echo esc_html( $event->get_title() ); ?>

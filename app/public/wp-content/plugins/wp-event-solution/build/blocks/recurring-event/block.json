@@ -14,6 +14,9 @@
     "eventId": {
       "type": "string"
     },
+    "className": {
+      "type": "string"
+    },
     "styles": {
       "type": "object",
       "default": {
@@ -29,6 +32,9 @@
         "Mobile": {}
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

@@ -23,7 +23,7 @@ class ReaderFactory {
             case ('text/csv' || 'application/vnd.ms-excel'):
                 return new CSVReader( $file_name );
             default:
-                throw new \Exception( __( 'You must provide a valid file type', 'eventin' ) );
+                throw new \Exception( esc_html__( 'You must provide a valid file type', 'eventin' ) );
         }
     }
 }

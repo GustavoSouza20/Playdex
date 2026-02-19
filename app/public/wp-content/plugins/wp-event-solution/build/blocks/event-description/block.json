@@ -15,6 +15,9 @@
     "eventId": {
       "type": "string"
     },
+    "className": {
+      "type": "string"
+    },
     "styles": {
       "type": "object",
       "default": {
@@ -49,6 +52,9 @@
         }
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

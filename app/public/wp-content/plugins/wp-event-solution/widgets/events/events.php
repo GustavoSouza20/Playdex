@@ -896,7 +896,7 @@ class Etn_Events extends Widget_Base {
         $show_parent_event  = $settings["show_parent_event"];
         $show_remaining_tickets  = $settings["show_remaining_tickets"];
         $enable_pagination  = (isset($settings["enable_pagination"]) ? $settings["enable_pagination"] : 'no');
-        $posts_per_page     = (isset($settings["posts_per_page"]) ? $settings["posts_per_page"] : 6);
+        $posts_per_page     = (isset($settings["posts_per_page"]) ? intval($settings["posts_per_page"]) : 6);
 
         // Handle pagination
         $etn_paged = 1;

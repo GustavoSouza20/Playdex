@@ -214,7 +214,7 @@ if ( ! function_exists( 'etn_after_single_event_meta_ticket_form' ) ) {
 	function etn_after_single_event_meta_ticket_form( $single_event_id ) {
 		$single_event_id = ! empty( $single_event_id ) ? $single_event_id : get_the_ID();
 		$disable_purchase_form = get_post_meta( $single_event_id, 'etn_disable_purchase_form', true );
-	
+		
 		$rsv_settings = get_post_meta( get_the_ID(), 'rsvp_settings', true );
 		$recurring_enabled = get_post_meta( get_the_ID(), 'recurring_enabled', true );
 	
@@ -227,12 +227,12 @@ if ( ! function_exists( 'etn_after_single_event_meta_ticket_form' ) ) {
 	
 		// Whether to show ticket selector and sell tickets, are controlled in frontend now.
 		?>
-<div class="etn-single-event-ticket-wrap">
-    <?php if ($recurring_enabled !== 'yes') { 
-				Helper::eventin_ticket_widget( $single_event_id );
-			} ?>
-</div>
-<?php
+			<div class="etn-single-event-ticket-wrap">
+				<?php if ($recurring_enabled !== 'yes') { 
+							Helper::eventin_ticket_widget( $single_event_id, "", "", "style-1" );
+						} ?>
+			</div>
+		 <?php
 	}
 } 
 
@@ -361,7 +361,7 @@ if ( ! function_exists( 'etn_after_recurring_event_form_content' ) ) {
 	 */
 	function etn_after_recurring_event_form_content( $single_event_id ) {
 		?>
-    <div>
+    <div class="etn-recurring-event-wrapper">
         <button id="seeMore" type="button">
             <?php echo esc_html__( 'Show More Event', 'eventin' ); ?>
             <i class="etn-icon etn-plus"></i>
@@ -772,6 +772,6 @@ if ( ! function_exists( "eventin_rich_result_support" ) ) {
 		];
 
 		// Convert schema array into ld+json file and add into the DOM
-		echo '<script type="application/ld+json">' . wp_unslash( json_encode( $event_data ) ) . '</script>';
+		echo '<script type="application/ld+json">' . wp_json_encode( $event_data ) . '</script>';
 	}
 }

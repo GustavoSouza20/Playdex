@@ -379,7 +379,7 @@
 }
 
 .etn-ticket-wrapper.ticket-style-2 .etn-ticket-main-wrapper {
-  max-width: 810px;
+  width: 810px;
   display: flex;
   -ms-flex-wrap: wrap;
   flex-wrap: wrap;
@@ -413,10 +413,6 @@
   max-height: 200px;
 }
 
-.etn-ticket-wrapper.ticket-style-2 .etn-ticket-main-wrapper {
-  padding: 0;
-  border: none;
-}
 
 .etn-ticket-wrapper.ticket-style-2 .etn-ticket-body-top-li p,
 .etn-ticket-wrapper.ticket-style-2 .etn-ticket-body-top-li span {

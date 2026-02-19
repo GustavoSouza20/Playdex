@@ -3,7 +3,61 @@
 use Eventin\Settings;
 use Eventin\Validation\Validator;
 use Etn\Core\Event\Event_Model;
+use Etn\Utils\Helper;
 use SureCart\Support\Currency;
+
+if ( ! function_exists( 'etn_safe_decode' ) ) {
+    /**
+     * Safely unserialize data, preventing PHP Object Injection.
+     *
+     * Uses allowed_classes => false to block instantiation of
+     * PHP objects during unserialization.
+     *
+     * @since 4.1.4
+     * @param mixed $data The data to unserialize.
+     * @return mixed The unserialized data (no objects), or the original data if not serialized.
+     */
+    function etn_safe_decode( $data ) {
+        if ( ! is_string( $data ) ) {
+            return $data;
+        }
+
+        if ( ! is_serialized( $data ) ) {
+            return $data;
+        }
+
+        return @unserialize( $data, [ 'allowed_classes' => false ] );
+    }
+}
+
+if ( ! function_exists( 'etn_sanitize_array_input' ) ) {
+    /**
+     * Sanitize input to prevent PHP Object Injection.
+     *
+     * This function rejects serialized strings that could contain malicious PHP objects.
+     * Arrays and non-serialized strings are passed through for further processing.
+     *
+     * @since 4.1.2
+     * @param mixed $input The input to sanitize.
+     * @return array|string Returns array if input is array, string if input is non-serialized string, empty array otherwise.
+     */
+    function etn_sanitize_array_input( $input ) {
+        // If it's already an array, return it
+        if ( is_array( $input ) ) {
+            return $input;
+        }
+        // If it's a serialized string, reject it to prevent PHP Object Injection
+        if ( is_string( $input ) && is_serialized( $input ) ) {
+            return [];
+        }
+        // Return non-serialized strings as-is (safe for further processing like CSV parsing)
+        if ( is_string( $input ) ) {
+            return $input;
+        }
+        // Return empty array for other non-array input types
+        return [];
+    }
+}
 
 if ( ! function_exists( 'etn_array_csv_column' ) ) {
     /**
@@ -1187,22 +1241,29 @@ if ( ! function_exists( 'etn_validate_event_tickets' ) ) {
      *
      * @return  bool | WP_Error
      */
-    function etn_validate_event_tickets( $event_id, $order_tickets ) {
+    function etn_validate_event_tickets( $event_id, $order_tickets,$is_for_update = false ) {
         $event         = new Event_Model( $event_id );
+        $sold_tickets    = (array)Helper::etn_get_sold_tickets_by_event( $event_id );
 
         foreach( $order_tickets as $ticket ) {
             $event_ticket = $event->get_ticket( $ticket['ticket_slug'] );
 
-            $available = $event_ticket['etn_avaiilable_tickets'];
-            $sold      = $event_ticket['etn_sold_tickets'];
+            $available = $event_ticket['etn_avaiilable_tickets']??0;
+            $sold      = $sold_tickets[$ticket['ticket_slug']]??0;
+            $pending   = $event_ticket['pending']??0;
 
 			// check if `etn_avaiilable_tickets` exists. if not means unlimited ticket
 			if ( !isset($available) || !is_numeric($available) ) {
 				return true;
 			}
-            $ticket_left = intval($available) - intval($sold);
+            if($is_for_update){
+                $ticket_left = intval($available) - intval($sold) - intval($pending) + intval($ticket['ticket_quantity']);
+            }else{
+                $ticket_left = intval($available) - intval($sold) - intval($pending);
+            }
 
-            if ( $ticket['ticket_quantity'] > $ticket_left ) {
+            $available = $event_ticket['etn_avaiilable_tickets']??0;
+            if ($available > 0 && $ticket['ticket_quantity'] > $ticket_left ) {
                 return new WP_Error( 'ticket_limit', __( 'The ticket limit has been exceeded', 'eventin' ), ['status' => 422] );
             }
         }
@@ -1211,7 +1272,36 @@ if ( ! function_exists( 'etn_validate_event_tickets' ) ) {
     }
 }
 
+if ( ! function_exists( 'etn_validate_seat_ids' ) ) {
+    /**
+     * Validate seat ids
+     *
+     * @param   array  $seat_ids  Seat ids
+     *
+     * @return  bool | WP_Error
+     */
+    function etn_validate_seat_ids( $event_id, $seat_ids ) {
+        $booked_seats = etn_safe_decode( get_post_meta( $event_id, '_etn_seat_unique_id', true ));
+        $already_booked_seats = $booked_seats ? explode(',', $booked_seats) : [];
+        $pending_seats = etn_safe_decode( get_post_meta( $event_id, 'pending_seats', true ));
+        if ( empty( $pending_seats ) ) {
+            $pending_seats = [];
+        }
+        $is_enable_payment_timer = etn_get_option( 'ticket_purchase_timer_enable', 'off' );
 
+        foreach ( $seat_ids as $seat_id ) {
+            // need to handle the corner in rush condition 
+            // if ( !in_array( $seat_id, $pending_seats ) &&  $is_enable_payment_timer == 'on') {
+            //     return new WP_Error( 'seat_limit', __( 'The requested seat is already booked, please select another seat', 'eventin' ), ['status' => 422] );
+            // }
+            if ( in_array( $seat_id, $already_booked_seats ) ) {
+                return new WP_Error( 'seat_limit', __( 'The requested seat is already booked', 'eventin' ), ['status' => 422] );
+            }
+        }
+
+        return true;
+    }
+}
 
 if ( ! function_exists('etn_humanize_number') ) {
 

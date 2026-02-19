@@ -85,6 +85,7 @@ class OrderExporter implements PostExporterInterface {
             $total_tax = floatval(get_post_meta( $order->id, 'tax_total', true ));
             $total_discount = floatval(get_post_meta( $order->id, 'discount_total', true ));
             $tax_display_mode = get_post_meta( $order->id, 'tax_display_mode', true );
+            $extra_fields = json_encode(etn_safe_decode(get_post_meta( $order->id, 'extra_fields', true )));
             
             $final_total = $order->total_price - $total_discount;
 
@@ -108,6 +109,7 @@ class OrderExporter implements PostExporterInterface {
                 'total_price'       => $order->total_price,
                 'final_price'       => $final_total,
                 'ticket_items'      => $tickets,
+                'extra_fields'      => $extra_fields,
                 'attendees'         => $attendees,
             ];
             
@@ -141,6 +143,7 @@ class OrderExporter implements PostExporterInterface {
             'final_price'        => __( 'Final Price', 'eventin' ),
             'ticket_items'       => __( 'Ticket Items', 'eventin' ),
             'attendees'          => __( 'Attendees', 'eventin' ),
+            'extra_fields'       => __( 'Extra Fields', 'eventin' ),
         ];
 
         return $columns;

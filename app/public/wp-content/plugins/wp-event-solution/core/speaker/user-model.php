@@ -187,7 +187,26 @@ class User_Model {
         $user       = get_userdata( $this->id ); 
         $author_url = get_author_posts_url( $user->ID, $user->user_nicename );
         return esc_url($author_url);
-    }        
+    }
+    
+    /**
+     * Get author name
+     *
+     * @return string
+     */
+    public function get_author_name() {
+        $user_id     = $this->id;
+        $user_info   = get_userdata( $user_id );
+        $first_name  = get_user_meta( $user_id, 'first_name', true );
+        $last_name   = get_user_meta( $user_id, 'last_name', true );
+
+        if ( ! empty( $first_name ) || ! empty( $last_name ) ) {
+            return trim( $first_name . ' ' . $last_name );
+        }
+
+        // fallback to display_name if no first/last name
+        return $user_info ? $user_info->display_name : '';
+    }
     
     /**
      * Get speaker category
@@ -196,7 +215,7 @@ class User_Model {
      */
     public function get_speaker_category() {
         $categories = $this->get_prop( 'category' );
-        $categories = maybe_unserialize( $categories );
+        $categories = etn_safe_decode( $categories );
         $group = [];
         if ( is_array( $categories ) ) {
             foreach($categories as $category) {
@@ -213,7 +232,7 @@ class User_Model {
      */
     public function get_speaker_socials() {
         $social = $this->get_prop( 'social' ) ;
-        $social = maybe_unserialize( $social );
+        $social = etn_safe_decode( $social );
         return $social ? $social : [];
     }
 
@@ -386,6 +405,7 @@ class User_Model {
             'category'          => $this->get_speaker_category(),
             'speaker_group'     => $this->get_speaker_group(),
             'company_name'      => $this->get_company_name(),
+            'author_name'        => $this->get_author_name(),
             'author_url'        => $this->get_author_url(),
             'date'              => $this->get_date(),
             'hide_user'         => $this->get_hide_user(),

@@ -179,8 +179,8 @@ class OrderModel extends Post_Model {
      *
      * @return  bool | WP_Error
      */
-    public function validate_ticket() {
-       return etn_validate_event_tickets( $this->event_id, $this->tickets );
+    public function validate_ticket($is_for_update = false) {
+       return etn_validate_event_tickets( $this->event_id, $this->tickets,$is_for_update );
     }
 	
 	

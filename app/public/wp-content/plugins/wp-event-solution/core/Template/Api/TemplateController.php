@@ -193,6 +193,10 @@ class TemplateController extends WP_REST_Controller {
             $args['post_status'] = $status;
         }
 
+        if ( $is_remote ) {
+            $args['post_status'] = 'publish';
+        }
+
         if ( ! current_user_can( 'manage_options' ) ) {
             $args['author'] = get_current_user_id(); 
         }
@@ -252,13 +256,18 @@ class TemplateController extends WP_REST_Controller {
     public function prepare_item_for_response( $item, $request ) {
         $is_static = $item instanceof StaticTemplate;
 
+        // Get thumbnail: WordPress featured image if available, otherwise use item thumbnail
+        $post_id = $is_static ? $item->get_id() : $item->id;
+        $featured_image = ! $is_static ? get_the_post_thumbnail_url( $post_id, 'full' ) : false;
+        $thumbnail = $featured_image ? $featured_image : $item->thumbnail;
+
         $response = [
             'id'            => $is_static ? $item->get_id() : $item->id,
             'name'          => $item->get_name(),
             'status'        => $item->get_status(),
             'type'          => $item->get_type(),
             'orientation'   => $item->get_orientation(),
-            'thumbnail'     => $item->thumbnail,
+            'thumbnail'     => $thumbnail,
             'content'       => $item->get_content(),
             'is_clone'      => $item->is_clone,
             'is_pro'        => $item->is_pro,

@@ -106,10 +106,13 @@ class AttendeeExporter implements PostExporterInterface {
         }
 
         if ( $extra_fields ) {
-            foreach ( $extra_fields as $value ) {
+            foreach ( $extra_fields as $index=>$value ) {
                 $key                        = \Etn_Pro\Utils\Helper::generate_name_from_label( "etn_attendee_extra_field_", $value['label'] );
                 $this->extra_fields[$key]   = $value['label'];
                 $extra_field_value          = get_post_meta( $attendee_id, $key, true );
+                if(empty($extra_field_value)){
+                    $extra_field_value = get_post_meta( $attendee_id, $key . '_' . $index+1, true );
+                }
                 switch($value['field_type']){
                     case 'radio':
                         $data[$key] = $extra_field_value;
@@ -131,7 +134,7 @@ class AttendeeExporter implements PostExporterInterface {
                     break;
 
                     default:
-                        $data[$key] = get_post_meta( $attendee_id, $key, true );
+                        $data[$key] = $extra_field_value;
                 }
             }
         }

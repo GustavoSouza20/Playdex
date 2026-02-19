@@ -148,7 +148,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 								if ( ! isset( $event_options["etn_hide_seats_from_details"] ) ) {
 									if ( ! etn_is_ticket_sale_start( $start_date_time, $time_zone ) ) {
 										?>
-										<span class="seat-remaining-text"><?php echo esc_html__( '(Sale start on ', 'eventin' );  echo $start_date->format( 'Y-m-d' ) .' ' . $start_time ;?> )</span>
+										<span class="seat-remaining-text"><?php echo esc_html__( '(Sale start on ', 'eventin' );  echo esc_html( $start_date->format( 'Y-m-d' ) .' ' . $start_time ) ;?> )</span>
 										<?php
 									}
 
@@ -172,7 +172,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 									<strong>
 										<?php
 										$price = number_format( (float) $value['etn_ticket_price'], $price_decimal, $price_decimal_separator, $thousand_separator );
-										echo \Etn\Core\Event\Helper::instance()->currency_with_position( $price );
+										echo wp_kses_post( \Etn\Core\Event\Helper::instance()->currency_with_position( $price ) );
 										?>
 									</strong>
 								</div>
@@ -182,7 +182,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 									<button type="button" class="qt-btn qt-sub" data-multi="-1"
 											data-key="<?php echo intval( $key ) ?>">-
 									</button>
-									<input name="ticket_quantity[<?php echo  $value['etn_ticket_name']?>]" type="number"
+									<input name="ticket_quantity[<?php echo esc_attr( $value['etn_ticket_name'] ); ?>]" type="number"
 											class="etn_ticket_variation ticket_<?php echo intval( $key ); ?>"
 											value="0" id="ticket-input_<?php echo intval( $key ); ?>"
 											data-price="<?php echo number_format( (float) $value['etn_ticket_price'], $price_decimal, '.', '' ); ?>"
@@ -192,7 +192,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 											data-stock_out="<?php echo esc_attr__( "All ticket has has been sold", "eventin" ) ?>"
 											data-cart_ticket_limit="<?php echo esc_attr__( "You have already added 5 tickets. You can't purchase more than $etn_max_ticket tickets", "eventin" ) ?>"
 											data-stock_limit="<?php echo esc_attr__( "Stock limit $etn_current_stock. You can purchase within $etn_current_stock.", "eventin" ) ?>"
-											data-qty_message="<?php echo esc_attr__( "Total ticket quantity should be atleast ", "eventin" ) . $etn_min_ticket . esc_attr__( " and can not be higher than ", "eventin" ) . $etn_max_ticket; ?>"
+											data-qty_message="<?php echo esc_attr__( "Total ticket quantity should be atleast ", "eventin" ) . absint( $etn_min_ticket ) . esc_attr__( " and can not be higher than ", "eventin" ) . absint( $etn_max_ticket ); ?>"
 											data-etn_cart_limit="<?php echo absint( $etn_cart_limit ); ?>"
 											data-etn_cart_limit_message="<?php echo esc_attr__( "You have already added $etn_cart_limit, Which is greater than maximum quantity $etn_max_ticket . You can add maximum $etn_max_ticket tickets. ", "eventin" ); ?>"/>
 									<button type="button" class="qt-btn qt-add" data-multi="1"
@@ -208,7 +208,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 									<strong>
 										<?php
 										$price = '<span class="_sub_total_' . floatval( $key ) . '">0</span>';
-										echo \Etn\Core\Event\Helper::instance()->currency_with_position( $price );
+										echo wp_kses_post( \Etn\Core\Event\Helper::instance()->currency_with_position( $price ) );
 										?>
 									</strong>
 								</div>
@@ -239,7 +239,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
                             <strong>
 								<?php
 								$price = '<span class="variation_total_price">0</span>';
-								echo \Etn\Core\Event\Helper::instance()->currency_with_position( $price );
+								echo wp_kses_post( \Etn\Core\Event\Helper::instance()->currency_with_position( $price ) );
 								?>
                             </strong>
                         </div>
@@ -272,7 +272,7 @@ if(class_exists('WooCommerce') && 'woocommerce' === $sells_engine) {
 			?>
             <small>
 				<?php echo esc_html__( 'Please', 'eventin' ); ?> <a
-                        href="<?php echo wp_login_url( get_permalink() ); ?>"><?php echo esc_html__( "Login", "eventin" ); ?></a> <?php echo esc_html__( ' to buy ticket!', "eventin" ); ?>
+                        href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>"><?php echo esc_html__( "Login", "eventin" ); ?></a> <?php echo esc_html__( ' to buy ticket!', "eventin" ); ?>
             </small>
 			<?php
 		}

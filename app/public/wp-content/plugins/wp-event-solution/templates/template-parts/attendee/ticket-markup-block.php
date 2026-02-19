@@ -3,6 +3,7 @@
     // Add meta tag for responsive design in the head
 
 use Etn\Core\Event\Event_Model;
+use Etn\Utils\Helper;
 use Eventin\Template\TemplateModel;
 
     function etn_viewport_meta() {
@@ -68,7 +69,7 @@ use Eventin\Template\TemplateModel;
       <div class="etn-ticket-wrapper">
             <div class="etn-ticket-main-wrapper">
                 <div class="etn-ticket">
-                    <?php 
+                    <?php
                         if ( $post && $post->post_status === 'draft' ) {
                             ?>
                             <p><?php esc_html_e( 'The template is not published', 'eventin' ); ?></p>

@@ -110,7 +110,7 @@ class QRCodeBlock extends AbstractBlock {
         
         ob_start();
         ?>
-        <?php echo $this->render_frontend_css( $styles, $container_class ); ?>
+        <?php echo $this->render_frontend_css( $styles, esc_attr( $container_class ) ); ?>
         <div class="eventin-ticket-qrcode" style="<?php echo esc_attr( $content_styles ); ?>">
             <p class="etn-ticket-id" id="ticketUnqId" data-ticketverifyurl="<?php echo esc_url( $ticket_verify_url ) ?>"></p>
             <img class="etn-qrImage" src="" alt="" id="qrImage" />

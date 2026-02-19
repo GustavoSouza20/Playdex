@@ -9,10 +9,17 @@
     "blockId": {
       "type": "string"
     },
+    "styleVariant": {
+      "type": "string",
+      "default": "style-1"
+    },
     "containerClassName": {
       "type": "string"
     },
     "eventId": {
+      "type": "string"
+    },
+    "className": {
       "type": "string"
     },
     "styles": {
@@ -36,41 +43,44 @@
             "boxShadow": "none"
           },
           ".eventin-block-container:hover": {},
-          ".etn-content-item .etn-accordion-heading": {
-            "fontSize": "1.375rem",
-            "fontWeight": "700",
+          ".etn-faq-item .etn-faq-title": {
+            "fontSize": "18px",
+            "fontWeight": "600",
             "color": "#111111",
-            "margin": "0 0 15px",
-            "padding": "0px 40px 0px 0px",
-            "lineHeight": 1.5,
-            "cursor": "pointer",
-            "position": "relative"
+            "margin": "0",
+            "padding": "0",
+            "lineHeight": 1.5
           },
-          ".etn-content-item .etn-acccordion-contents": {
+          ".etn-faq-content-text": {
             "fontSize": "16px",
             "fontWeight": "400",
-            "margin": "0 0 0 0",
-            "padding": "0px 0px"
+            "color": "#8c8c8c",
+            "margin": "0",
+            "padding": "0",
+            "lineHeight": 1.6
           }
         },
         "Tablet": {
-          ".etn-content-item.etn-accordion-heading": {
-            "fontSize": "20px"
+          ".etn-faq-item .etn-faq-title": {
+            "fontSize": "18px"
           },
-          ".etn-content-item .etn-acccordion-contents": {
+          ".etn-faq-content-text": {
             "fontSize": "14px"
           }
         },
         "Mobile": {
-          ".etn-content-item .etn-accordion-heading": {
-            "fontSize": "18px"
+          ".etn-faq-item .etn-faq-title": {
+            "fontSize": "16px"
           },
-          ".etn-content-item .etn-acccordion-contents": {
+          ".etn-faq-content-text": {
             "fontSize": "14px"
           }
         }
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

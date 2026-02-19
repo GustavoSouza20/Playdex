@@ -24,9 +24,9 @@ class ExporterFactory {
 
             case 'json':
                 return new JsonExporter();
-            
+
             default:
-                throw new Exception( __( 'Unknown format', 'eventin' ) );
+                throw new Exception( esc_html__( 'Unknown format', 'eventin' ) );
         }
     }
 }

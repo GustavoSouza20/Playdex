@@ -65,7 +65,7 @@ abstract class Post_Model {
      */
     public function __get( $key ) {
         if ( ! isset( $this->data[$key] ) ) {
-            throw new Exception( __( 'Undefined property', 'eventin' ) );
+            throw new Exception( esc_html__( 'Undefined property', 'eventin' ) );
         }
 
         $data = $this->get_data();
@@ -83,9 +83,9 @@ abstract class Post_Model {
      */
     public static function __callStatic( $method, $arguments ) {
         if ( ! method_exists( new self, $method ) ) {
-            throw new Exception( __( 'Call to undefined method', 'eventin' ) );
+            throw new Exception( esc_html__( 'Call to undefined method', 'eventin' ) );
         }
-        
+
         call_user_func( $method, $arguments );
     }
 

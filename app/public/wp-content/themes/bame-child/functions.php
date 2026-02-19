@@ -47,7 +47,7 @@ function adicionar_chat_n8n_rodape() {
         import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
 
         createChat({
-            webhookUrl: 'http://localhost:5678/webhook/4c80d3b6-5ecb-489f-9c4c-d882fa5cdaff/chat',
+            webhookUrl: 'http://localhost:5678/webhook/052f3a0d-f3b3-451d-a92d-54e5f90a7fc2/chat',
             mode: 'window',
             
             // --- AQUI ESTÁ A CORREÇÃO DA MENSAGEM ---

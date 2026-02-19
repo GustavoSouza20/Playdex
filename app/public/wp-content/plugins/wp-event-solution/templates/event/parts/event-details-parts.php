@@ -239,7 +239,7 @@ class EventDetailsParts {
                         <li>
 							<?php if ( $data['event_start_date'] !== $data['event_end_date']): ?>
                             <span> <?php echo esc_html__( 'Date :', "eventin" ); ?></span>
-							<?php echo $start_date . $separate . $end_date; ?>
+							<?php echo esc_html( $start_date . $separate . $end_date ); ?>
 							
 
 							<?php else: ?>
@@ -276,7 +276,7 @@ class EventDetailsParts {
 					$location = \Etn\Core\Event\Helper::instance()->display_event_location( $single_event_id );
 					$location = etn_prepare_address( $location );
 					$event_location_type = $data['etn_event_location_type'];
-					if ( ! empty( $location) ) {
+					if ( ! isset( $event_options["etn_hide_location_from_details"] ) && ! empty( $location) ) {
 						?>
                         <li>
                             <span><?php echo esc_html__( 'Venue : ', "eventin" ) ?></span>
@@ -311,47 +311,66 @@ class EventDetailsParts {
 
 	public static function event_single_faq( $single_event_id ) {
 		$etn_faqs = get_post_meta( $single_event_id, 'etn_event_faq', true );
-		if(!empty($etn_faqs)):
+
+		if ( ! empty( $etn_faqs ) && is_array( $etn_faqs ) ) :
+
+			$has_enabled_faq = false;
+
+			foreach ( $etn_faqs as $faq ) {
+				if(!array_key_exists('etn_faq_enabled', $faq)) {
+					$has_enabled_faq = true;
+					break;
+				} elseif ( ! empty( $faq['etn_faq_enabled'] ) ) {
+					$has_enabled_faq = true;
+					break;
+				}
+			}
 			?>
+
 			<div class="etn-accordion-wrap etn-event-single-content-wrap">
 				<h3 class="etn-faq-heading">
-					<?php 
-						$event_faq_title = apply_filters( 'etn_event_faq_title', esc_html__( "frequently asked questions", "eventin" ));
-						echo esc_html( $event_faq_title ); ?>
+					<?php
+					echo esc_html(
+						apply_filters( 'etn_event_faq_title', __( 'Frequently Asked Questions', 'eventin' ) )
+					);
+					?>
 				</h3>
-				<?php
-					if ( is_array( $etn_faqs ) && !empty( $etn_faqs ) ) {
-						foreach ( $etn_faqs as $key => $faq ) {
-							$acc_class = ( $key == 0 ) ? 'active' : '';  ?>
-							<div class="etn-content-item">
-								<h4 class="etn-accordion-heading <?php echo esc_attr( $acc_class ); ?>">
-									<?php echo esc_html( $faq["etn_faq_title"] ); ?>
-									<?php 
-										if($acc_class){
-											echo '<i class="etn-icon etn-minus"></i>';
-										} else {
-											echo '<i class="etn-icon etn-plus"></i>';
-										}
-									?>
-								</h4>
-								<p class="etn-acccordion-contents <?php echo esc_attr( $acc_class ); ?>">
-									<?php 
-										if ( has_blocks( $faq["etn_faq_content"] ) ) {
-											echo do_blocks( $faq["etn_faq_content"] );
-										} else {
-											echo esc_html( $faq["etn_faq_content"] );
-										}
-									?>
-								</p>
-							</div>
-				<?php }
-					} else { ?>
-						<div class="etn-event-faq-body">
-							<?php echo esc_html__( "No FAQ found!", "eventin" ); ?>
+
+				<?php if ( $has_enabled_faq ) : ?>
+
+					<?php foreach ( $etn_faqs as $key => $faq ) :
+						if ( array_key_exists('etn_faq_enabled', $faq) && empty( $faq['etn_faq_enabled'] ) ) {
+							continue;
+						}
+
+						$acc_class = ( $key === 0 ) ? 'active' : '';
+						?>
+						<div class="etn-content-item">
+							<h4 class="etn-accordion-heading <?php echo esc_attr( $acc_class ); ?>">
+								<?php echo esc_html( $faq['etn_faq_title'] ); ?>
+								<i class="etn-icon <?php echo $acc_class ? 'etn-minus' : 'etn-plus'; ?>"></i>
+							</h4>
+
+							<p class="etn-acccordion-contents <?php echo esc_attr( $acc_class ); ?>">
+								<?php
+								if ( has_blocks( $faq['etn_faq_content'] ) ) {
+									echo do_blocks( $faq['etn_faq_content'] );
+								} else {
+									echo esc_html( $faq['etn_faq_content'] );
+								}
+								?>
+							</p>
 						</div>
-				<?php } ?>
+					<?php endforeach; ?>
+
+				<?php else : ?>
+					<div class="etn-event-faq-body">
+						<?php echo esc_html__( 'No FAQ found!', 'eventin' ); ?>
+					</div>
+				<?php endif; ?>
 			</div>
-		<?php endif; 
+
+		<?php endif;
 	}
 
 

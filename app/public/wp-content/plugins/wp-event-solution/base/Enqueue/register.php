@@ -225,14 +225,21 @@ class Register {
 		$primary_color   = '#5D78FF';
 		$secondary_color = '';
 
-		// cart bg color.
+		// SECURITY: Sanitize color values to prevent XSS
 		if ( ! empty( $settings['etn_primary_color'] ) ) {
-			$primary_color = $settings['etn_primary_color'];
+			$primary_color = sanitize_hex_color( $settings['etn_primary_color'] );
+			// Fallback to default if sanitization fails
+			if ( empty( $primary_color ) ) {
+				$primary_color = '#5D78FF';
+			}
 		}
 
-		// cart icon color.
 		if ( ! empty( $settings['etn_secondary_color'] ) ) {
-			$secondary_color = $settings['etn_secondary_color'];
+			$secondary_color = sanitize_hex_color( $settings['etn_secondary_color'] );
+			// Fallback to empty if sanitization fails
+			if ( empty( $secondary_color ) && ! empty( $settings['etn_secondary_color'] ) ) {
+				$secondary_color = '';
+			}
 		}
 
 		$etn_custom_css .= "

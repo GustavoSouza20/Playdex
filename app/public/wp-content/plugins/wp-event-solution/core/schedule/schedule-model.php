@@ -29,5 +29,6 @@ class Schedule_Model extends Post_Model {
         'etn_schedule_date'   => '',
         'etn_schedule_day'    => '',
         'etn_schedule_topics' => '',
+        'hide_date_on_event_page' => false,
     ];
 }

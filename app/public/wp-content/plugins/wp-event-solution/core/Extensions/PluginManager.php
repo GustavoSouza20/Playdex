@@ -68,11 +68,7 @@ class PluginManager {
         $skin      = new \Automatic_Upgrader_Skin();
         $upgrader  = new \Plugin_Upgrader($skin);
 
-        if($slug === 'eventin-surecart-addon') {
-            $result    = $upgrader->install('https://themewinter.com/wp-content/uploads/2025/11/eventin-surecart-addon-1.0.1.zip');
-        } else {
-            $result    = $upgrader->install('https://downloads.wordpress.org/plugin/' . $slug . '.latest-stable.zip');
-        }
+        $result    = $upgrader->install('https://downloads.wordpress.org/plugin/' . $slug . '.latest-stable.zip');
 
         return $result ? true : false;
     }

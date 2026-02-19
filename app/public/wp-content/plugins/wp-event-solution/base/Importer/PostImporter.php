@@ -37,6 +37,6 @@ class PostImporter {
             return new $exporters[$post_type]();
         }
 
-        throw new \Exception( __( 'Unknown Post Type', 'eventin' ) );
+        throw new \Exception( esc_html__( 'Unknown Post Type', 'eventin' ) );
     }
 }

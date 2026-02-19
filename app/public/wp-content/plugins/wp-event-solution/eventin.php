@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  * Plugin Name:       Eventin
  * Plugin URI:        https://themewinter.com/eventin/
  * Description:       Simple and Easy to use Event Management Solution
- * Version:           4.0.48
+ * Version:           4.1.4
  * Author:            Themewinter
  * Author URI:        https://themewinter.com/
  * License:           GPL-2.0+
@@ -20,6 +20,7 @@ defined( 'ABSPATH' ) || exit;
  * Requires at least: 6.2
  * Requires PHP:      7.4
  */
+
 
 require_once __DIR__ . '/vendor/autoload.php';
 require_once plugin_dir_path( __FILE__ ) . '/utils/functions.php';
@@ -44,7 +45,7 @@ class Wpeventin {
 	 * @var string The plugin version.
 	 */
 	public static function version() {
-		return "4.0.48";
+		return "4.1.4";
 	}
 
 	/**
@@ -475,7 +476,12 @@ class Wpeventin {
 								"type"  => "string",
 							],
 						],
-						"delay_dependencies" => [],
+						"delay_dependencies" => [
+							[
+								"label" => "After Booking Time",
+								"value" => "after_booking_time",
+							],	
+						],
 						"email_receivers" => [
 							[
 								"label" => "Attendee",
@@ -534,7 +540,12 @@ class Wpeventin {
 								"type"  => "string",
 							],
 						],
-						"delay_dependencies" => [],
+						"delay_dependencies" => [
+							[
+								"label" => "After Registration Time",
+								"value" => "after_registration_time",
+							],	
+						],
 						"email_receivers" => [
 							[
 								"label" => "Attendee",
@@ -586,7 +597,62 @@ class Wpeventin {
 						],
 						"delay_dependencies" => [
 							[
+								"label" => "Before Event Date",
+								"value" => "before_event_date",
+							],
+						],
+						"email_receivers" => [
+							[
+								"label" => "Attendee",
+								"value" => "attendee_email",
+							],
+						],
+					],
+					[
+						"trigger_label" => "Send Email To All Attendees", // Name of the event
+						"trigger_value" => "send_email_to_all_attendees", // Event slug
+						"trigger_data" => [ // Data you have after the event happened
+							[
+								"label" => "Site Name",
+								"value" => "site_name",
+								"type"  => "string",
+							],
+							[
+								"label" => "Site Link",
+								"value" => "site_link",
+								"type"  => "string",
+							],
+							[
+								"label" => "Event Title",
+								"value" => "event_title",
+								"type"  => "string",
+							],
+							[
 								"label" => "Event Date",
+								"value" => "event_date",
+								"type"  => "date",
+							],
+							[
+								"label" => "Event Time",
+								"value" => "event_time",
+								"type"  => "string",
+							],
+							[
+								"label" => "Event Location",
+								"value" => "event_location",
+								"type"  => "string",
+							],
+						],
+						"conditional_dependencies" => [ // Data you have after the event happened
+							[
+								"label" => "Event Title",
+								"value" => "event_title",
+								"type"  => "string",
+							],
+						],
+						"delay_dependencies" => [
+							[
+								"label" => "Before Event Date",
 								"value" => "before_event_date",
 							],
 						],

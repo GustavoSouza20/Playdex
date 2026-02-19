@@ -28,6 +28,7 @@ class Frontend
         wp_enqueue_script('etn-public');
         wp_enqueue_style('etn-icon');
         wp_enqueue_style('etn-public-css');
+        wp_enqueue_style('etn-sf-pro-font');
         //set translations
 
         wp_set_script_translations('etn-public', 'eventin');

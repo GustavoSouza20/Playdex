@@ -37,14 +37,26 @@ class Helper {
 
 	/**
 	 * Return currency symbol with position
+	 *
+	 * @param string|float $price The price to format
+	 * @param object|null $order Optional order object to get currency from
+	 * @return string Formatted price with currency symbol
 	 */
-	public function currency_with_position( $price ) {
+	public function currency_with_position( $price, $order = null ) {
+		$payment_method = $order->payment_method ?? '';
+
+		$currency_symbol = $this->get_currency();
 
 		$currency_position = 'left';
 		if ( class_exists( 'WooCommerce' ) ) {
 			$currency_position = get_option( 'woocommerce_currency_pos', 'left' );
 		}
-		$currency_symbol = $this->get_currency();
+
+		// If order is provided and has currency_symbol meta, use it
+		// This ensures the correct currency is used for orders paid via SureCart or other gateways
+		if ( $payment_method == 'sure_cart' ) {
+			$currency_symbol = get_post_meta( $order->id, 'currency_symbol', true );
+		}
 
 		if ( $currency_position === 'left_space' ) {
 			return sprintf( '%s %s', esc_html( $currency_symbol ), $price );
@@ -80,7 +92,7 @@ class Helper {
 		if ( $location_type == 'existing_location' ) {
 			$location = get_post_meta( $event_id, 'etn_event_location', true );
 		} else {
-			$location_arr = maybe_unserialize( get_post_meta( $event_id, 'etn_event_location_list', true ) );
+			$location_arr = etn_safe_decode( get_post_meta( $event_id, 'etn_event_location_list', true ) );
 
 			if ( ! empty( $location_arr ) && is_array( $location_arr ) ) {
 				$location_names = [];
@@ -245,6 +257,10 @@ class Helper {
 		
 		$event_end_date = get_post_meta( $single_event_id, "etn_end_date", true );
 		$event_end_time = get_post_meta( $single_event_id, "etn_end_time", true );
+
+		if ( str_contains(strtolower($event_end_date), 'invalid') ) {
+			return true;
+		}
 
 		if ( $event_end_date ) {
 			$date = new DateTime( $event_end_date );

@@ -89,7 +89,7 @@ class Seatplan_Form {
 		<form method="POST">
 			<?php  wp_nonce_field('ticket_purchase_next_step_two','ticket_purchase_next_step_two'); ?>
 			<?php if ( ! empty( $errors['seat_limit_error'] ) ): ?>
-				<p style="text-align: center; color: red"><?php echo $errors['seat_limit_error'] ?></p>
+				<p style="text-align: center; color: red"><?php echo esc_html( $errors['seat_limit_error'] ); ?></p>
 			<?php endif; ?>
 			<div class="wrap-seat-plan-form timetics-shortcode-wrapper">
 				<div id="etn-seat-plan" data-id="<?php echo intval(get_the_ID()); ?>"></div>

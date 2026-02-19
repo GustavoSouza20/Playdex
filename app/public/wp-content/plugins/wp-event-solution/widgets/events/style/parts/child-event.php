@@ -13,9 +13,9 @@ if ( !empty( $show_child_event ) && 'yes' == $show_child_event ) {
                         <!-- thumbnail -->
                         <?php if ( get_the_post_thumbnail_url( $item->ID ) ) : ?>
                             <div class="etn-event-thumb">
-                                <a 
+                                <a
                                     href="<?php echo esc_url(get_the_permalink($item->ID)); ?>"
-                                    aria-label="<?php echo get_the_title(); ?>"
+                                    aria-label="<?php echo esc_attr(get_the_title()); ?>"
                                 >
                                         <?php echo get_the_post_thumbnail( $item->ID, 'large' );  ?>
                                 </a>
@@ -51,7 +51,7 @@ if ( !empty( $show_child_event ) && 'yes' == $show_child_event ) {
                                             <?php
                                         } else {
                                             ?>
-                                            <a href="<?php echo esc_url(get_the_permalink($item->ID)); ?>" class="etn-btn etn-btn-border" title="<?php echo get_the_title($item->ID); ?>"><?php echo esc_html__('Attend', 'eventin') ?> <i class="etn-icon etm-arrow-right"></i></a>
+                                            <a href="<?php echo esc_url(get_the_permalink($item->ID)); ?>" class="etn-btn etn-btn-border" title="<?php echo esc_attr(get_the_title($item->ID)); ?>"><?php echo esc_html__('Attend', 'eventin') ?> <i class="etn-icon etm-arrow-right"></i></a>
                                             <?php
                                         }
                                     ?>

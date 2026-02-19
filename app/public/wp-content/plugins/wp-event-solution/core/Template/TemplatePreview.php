@@ -39,7 +39,7 @@ use Eventin\Template\TemplateModel;
     $template_id = ! empty( $_GET['template_id'] ) ? intval( $_GET['template_id'] ) : 0;
 
     if ( ! $template_id ) {
-        printf( '<p>%s</p>', __( 'No template found. Please select one first.', 'eventin' ) );
+        printf( '<p>%s</p>', esc_html__( 'No template found. Please select one first.', 'eventin' ) );
         return;
     }
 
@@ -56,7 +56,7 @@ use Eventin\Template\TemplateModel;
       <div class="etn-ticket-wrapper">
             <div class="etn-ticket-main-wrapper">
                 <div class="etn-ticket">
-                    <?php echo $template_html; ?>
+                    <?php echo wp_kses_post( $template_html ); ?>
                 </div>
                 <!-- <div class="etn-ticket-action"></div> -->
             </div>

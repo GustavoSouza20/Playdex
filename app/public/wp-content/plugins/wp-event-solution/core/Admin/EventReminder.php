@@ -175,6 +175,7 @@ class EventReminder implements HookableInterface {
             'attendee_email'       => [],
             'event_id'             => $event->id,
             'post_id'              => $event->id,
+            'session_id'           => uniqid(),
         ] );
     }
 
@@ -207,6 +208,7 @@ class EventReminder implements HookableInterface {
                 'attendee_email'                => [],
                 'event_id'                      => $event->id,
                 'post_id'                       => $event->id,
+                'session_id'                    => uniqid(),
             ] );
         }
 

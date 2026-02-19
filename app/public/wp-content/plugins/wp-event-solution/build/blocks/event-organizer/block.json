@@ -9,10 +9,17 @@
     "blockId": {
       "type": "string"
     },
+    "styleVariant": {
+      "type": "string",
+      "default": "style-1"
+    },
     "containerClassName": {
       "type": "string"
     },
     "eventId": {
+      "type": "string"
+    },
+    "className": {
       "type": "string"
     },
     "styles": {
@@ -37,26 +44,31 @@
           },
           ".eventin-block-container:hover": {},
           ".etn-organaizer-item .etn-organizer-name": {
-            "fontSize": "1.125rem",
-            "fontWeight": "500",
-            "color": "#111111",
-            "margin": "0px 0px 5px 0px",
-            "padding": "0px 0px 0px 0px",
-            "lineHeight": 1.5
+            "fontSize": "16px",
+            "fontWeight": "700",
+            "color": "#0b243f",
+            "lineHeight": 1.2
+          },
+          ".etn-organaizer-item .etn-organizer-email": {
+            "fontSize": "14px",
+            "color": "#6d7d8c",
+            "lineHeight": 1.2
+          },
+          ".etn-organaizer-item .etn-organizer-logo": {
+            "width": "50px",
+            "height": "50px"
+          },
+          ".etn-organaizer-item .etn-social .etn-icon": {
+            "fontSize": "12px"
           }
         },
-        "Tablet": {
-          ".etn-organaizer-item .etn-organizer-name": {
-            "fontSize": "1rem"
-          }
-        },
-        "Mobile": {
-          ".etn-organaizer-item .etn-organizer-name": {
-            "fontSize": "0.9rem"
-          }
-        }
+        "Tablet": {},
+        "Mobile": {}
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

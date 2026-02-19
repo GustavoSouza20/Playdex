@@ -26,16 +26,24 @@ Helper::etn_template_include();
     ?>
     
     <?php while ( have_posts() ) : ?>
-        
+
         <?php
+        the_post();
+
+        // Check if password is required
+        if ( post_password_required() ) {
+            echo get_the_password_form();
+            continue;
+        }
+
         //show woocommerce notice
         if ( class_exists( 'WooCommerce' ) ) {
             wc_print_notices();
         }
 
         ?>
-        
-        <?php do_action( "etn_single_event_template", the_post() ); ?>
+
+        <?php do_action( "etn_single_event_template" ); ?>
 
     <?php endwhile; // end of the loop. ?>
 

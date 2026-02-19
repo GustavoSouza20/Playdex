@@ -14,7 +14,7 @@ $i = 0;
 						$active_class = ($i===1) ? 'etn-active' : '';
 		?>
 						<li>
-								<a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($widget_id) . "-" . $i; ?>'>
+								<a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($widget_id) . "-" . esc_attr($i); ?>'>
 										<?php
 											echo esc_html($cat_id['tab_title']);
 										?>
@@ -37,7 +37,7 @@ $i = 0;
 					$active_class = (($j == 1) ? 'tab-active' : '');
 
 					?>
-					<div class="etn-tab <?php echo esc_attr($active_class); ?>" data-id='tab<?php echo esc_attr($widget_id) . "-" . $j; ?>'>
+					<div class="etn-tab <?php echo esc_attr($active_class); ?>" data-id='tab<?php echo esc_attr($widget_id) . "-" . esc_attr($j); ?>'>
 							<?php
 								$event_cat = $event_cats['etn_event_cat'];
 								$event_tag = $event_cats["etn_event_tag"];
@@ -50,7 +50,21 @@ $i = 0;
 								} else {
 										$orderby_meta       = null;
 								}
-								
+
+								// Handle pagination for each tab
+								$etn_paged = 1;
+								$pagination_param = 'etn_tab_' . ($j - 1) . '_paged'; // Unique param for each tab
+
+								if ($enable_pagination === 'yes') {
+									// Get the page number from URL parameter for this specific tab
+									if (isset($_GET[$pagination_param]) && is_numeric($_GET[$pagination_param])) {
+										$etn_paged = max(1, intval($_GET[$pagination_param]));
+									}
+								}
+
+								// Determine posts to show based on pagination setting
+								$posts_to_show = ($enable_pagination === 'yes') ? $posts_per_page : $event_count;
+
 								// Validate file inclusion
 								$sanitize_filename = sanitize_file_name($style);
 								$style             = !empty($sanitize_filename) ? $sanitize_filename : 'event-1';

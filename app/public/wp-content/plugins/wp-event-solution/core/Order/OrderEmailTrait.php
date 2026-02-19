@@ -126,10 +126,12 @@ trait OrderEmailTrait {
             'event_date'     => $event->get_start_date($date_format),
             'event_date_timestamp'     => $event_start_date_timestamp,
             'event_time'     => $event->get_start_time(),
+            'booking_time_timestamp'     => current_time('timestamp'),
             'event_location' => $event->get_address(),
             'event_id'       => $order->event_id,
             'order_id'       => $order->id,
             'admin_email'    => $admin_email,
+            'session_id'     => uniqid(),
         ] );
     }
 
@@ -153,10 +155,12 @@ trait OrderEmailTrait {
             'event_date'     => $event->get_start_date( $date_format ),
             'event_date_timestamp'     => $event_start_date_timestamp,
             'event_time'     => $event->get_start_time(),
+            'booking_time_timestamp'     => current_time('timestamp'),
             'event_location' => $event->get_address(),
             'event_id'       => $order->event_id,
             'order_id'       => $order->id,
             'customer_email' => $order->customer_email,
+            'session_id'     => uniqid(),
         ] );
     }
 
@@ -188,10 +192,12 @@ trait OrderEmailTrait {
             'event_date'     => $event->get_start_date( $date_format ),
             'event_date_timestamp'     => $event_start_date_timestamp,
             'event_time'     => $event->get_start_time(),
+            'booking_time_timestamp'     => current_time('timestamp'),
             'event_location' => $event->get_address(),
             'attendee_id'    => $attendee_ids,
             'attendee_email' => $attendee_emails,
             'event_id'       => $order->event_id,
+            'session_id'     => uniqid(),
         ] );
     }
 

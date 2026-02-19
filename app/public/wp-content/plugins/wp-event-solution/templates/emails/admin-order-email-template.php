@@ -64,7 +64,7 @@
                 "
             >
                 <?php
-                    $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($ticket['etn_ticket_price'] * $ticket['etn_ticket_qty'],2) ); 
+                    $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($ticket['etn_ticket_price'] * $ticket['etn_ticket_qty'],2), $order );
                     printf( '%s', esc_html( $price_with_currency) );
                 ?>
             </td>
@@ -92,9 +92,9 @@
             color: #334155;
             "
         >
-        <?php 
-            $total_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->total_price,2) );
-            printf( '%s', esc_html( $total_with_currency) ); 
+        <?php
+            $total_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->total_price,2), $order );
+            printf( '%s', esc_html( $total_with_currency) );
         ?>
 
         </td>
@@ -115,9 +115,9 @@
                 color: #334155;
                 "
             >
-             <?php 
-                $discount_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->discount_total,2) );
-                printf( '%s', esc_html( $discount_with_currency) ); 
+             <?php
+                $discount_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->discount_total,2), $order );
+                printf( '%s', esc_html( $discount_with_currency) );
               ?>
 
             </td>
@@ -140,8 +140,8 @@
                 color: #334155;
                 "
             >
-             <?php 
-                $tax_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->tax_total,2) );
+             <?php
+                $tax_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($order->tax_total,2), $order );
                 printf( '%s', esc_html( $tax_with_currency) );
              ?>
 
@@ -184,15 +184,15 @@
             if ( $tax_display_mode === 'incl' && class_exists('WooCommerce') && $order->payment_method == 'wc' ) {
                 // Inclusive tax: total already includes tax, so don't add it again
                 $final_total = floatval($order->total_price ) - floatval($discount_price);
-                $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($final_total,2) );
-                $tax_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($tax_total,2) );
+                $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($final_total,2), $order );
+                $tax_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($tax_total,2), $order );
 
                 $tax_note    = sprintf( __( '(includes %s Tax)', 'eventin' ), esc_html( $tax_with_currency ) );
-            
+
             } else {
                 // Exclusive tax: add tax to the total
                 $final_total = floatval($order->total_price ) - floatval($discount_price) + floatval($tax_total);
-                $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($final_total,2) );
+                $price_with_currency = \Etn\Core\Event\Helper::instance()->currency_with_position( number_format($final_total,2), $order );
                 $tax_note    = '';
             }
             
@@ -353,9 +353,9 @@
             $time_format = etn_time_format();
         
             if ( $event->etn_start_date == $event->etn_end_date ) {
-                printf( '%s from %s - %s %s', $event->get_start_datetime( $date_format ), $event->get_start_datetime( $time_format ), $event->get_end_datetime( $time_format ), $event->get_timezone() );
+                printf( '%s from %s - %s %s', esc_html( $event->get_start_datetime( $date_format ) ), esc_html( $event->get_start_datetime( $time_format ) ), esc_html( $event->get_end_datetime( $time_format ) ), esc_html( $event->get_timezone() ) );
             } else {
-                printf( '%s at %s - %s at %s %s', $event->get_start_datetime( $date_format ), $event->get_start_datetime( $time_format ), $event->get_end_datetime( $date_format ), $event->get_end_datetime( $time_format ), $event->get_timezone() );
+                printf( '%s at %s - %s at %s %s', esc_html( $event->get_start_datetime( $date_format ) ), esc_html( $event->get_start_datetime( $time_format ) ), esc_html( $event->get_end_datetime( $date_format ) ), esc_html( $event->get_end_datetime( $time_format ) ), esc_html( $event->get_timezone() ) );
             }
         ?>
         </p>
@@ -389,7 +389,7 @@
                 echo '<br>';
                 printf( 'Online meeting link: %s', esc_url( $event->meeting_link ) );
             } elseif ( $event->event_type == 'online' ) {
-                printf( 'Online meeting link: %s', $event->meeting_link );
+                printf( 'Online meeting link: %s', esc_html( $event->meeting_link ) );
             }
         ?>
         </p>

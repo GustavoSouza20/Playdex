@@ -65,11 +65,11 @@ class TicketTemplate implements HookableInterface {
 			$get_arr = filter_input_array( INPUT_GET, FILTER_SANITIZE_FULL_SPECIAL_CHARS );
 
 			if ( empty( $get_arr["attendee_id"] ) || empty( $get_arr["etn_info_edit_token"] ) ) {
-				wp_die( __( 'Invalid data', 'eventin' ));
+				wp_die( esc_html__( 'Invalid data', 'eventin' ) );
 			}
 
 			if ( ! $this->verify_attendee_edit_token( $get_arr["attendee_id"], $get_arr["etn_info_edit_token"] ) ) {
-				wp_die( __( 'Invalid data', 'eventin' ));
+				wp_die( esc_html__( 'Invalid data', 'eventin' ) );
 			}
 			$attendee_id = $get_arr["attendee_id"];
 			$event_id    = get_post_meta( $attendee_id, "etn_event_id", true );
@@ -155,11 +155,12 @@ class TicketTemplate implements HookableInterface {
 
 		$ticket_style = isset( $settings['attendee_ticket_style'] ) ? $settings['attendee_ticket_style'] : 'style-1';
 
+
 		$event_ticket_template = get_post_meta( $event_id, 'ticket_template', true );
 
 		$layouts = [
-			'1' => 'style-1',
-			'2' => 'style-2',
+			'style-1' => 'style-1',
+			'style-2' => 'style-2',
 		];
 
 		if ( ! empty( $layouts[$event_ticket_template] ) ) {
@@ -171,14 +172,16 @@ class TicketTemplate implements HookableInterface {
 		if ( $post && $post->post_type !== 'etn-template' ) {
 			$post = get_post( etn_get_option('attendee_ticket_style') );
 		}
-		
-		if ( $post && $post->post_type === 'etn-template' ) {
 
+		if ( $post && $post->post_type === 'etn-template' ) {
 			include_once \Wpeventin::templates_dir() . "template-parts/attendee/ticket-markup-block.php";
 		} else {
-			include_once \Wpeventin::templates_dir() . "attendee/ticket-markup.php";
+			if($ticket_style === 'style-2') {
+				include_once \Wpeventin_Pro::templates_dir() . "attendee/ticket-markup-".esc_html($ticket_style).".php";
+			}else {
+				include_once \Wpeventin::templates_dir() . "attendee/ticket-markup-".esc_html($ticket_style).".php";
+			}
 		}
-
 	}
     
     /**

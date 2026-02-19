@@ -45,7 +45,9 @@ trait FrontAndBackTrait {
 	}
 
 	function hasContentCapability(){
-		return $this->hasContentDir() && ($this->isFullEditor() || $this->isContentEditor() || !empty($this->preferences['content_addon']));
+		return !$this->excludeAmender() && (
+			$this->hasContentDir() && ($this->isFullEditor() || $this->isContentEditor() || !empty($this->preferences['content_addon']))
+			);
 	}
 
 	function hasCSSCapability(){
@@ -85,7 +87,7 @@ trait FrontAndBackTrait {
 	// Conditionally run a content method
 	function contentMethod($method, $args = array(), $requiresSubscription = false){
 
-		if ($this->contentClass && method_exists($this->contentClass, $method)
+		if (!$this->excludeAmender() && $this->contentClass && method_exists($this->contentClass, $method)
 		    && (!$requiresSubscription || $this->hasContentSubscription())){
 			return call_user_func_array(array(&$this->contentClass, $method), $args);
 		}
@@ -106,6 +108,54 @@ trait FrontAndBackTrait {
 
 	function getDefaultNPM(){
 
+	}
+
+	/* Integrations */
+
+	function isBricksUi(){
+		return isset($_GET['bricks']) && $_GET['bricks'] === 'run';
+	}
+
+	function isBuilder() {
+
+		foreach (array(
+			array('bricks', 'run'),
+			array('elementor-preview'),
+			array('action', 'elementor'),
+			array('et_fb', '1'),
+			array('fl_builder'),
+			array('ct_builder'),
+			array('oxygen_iframe'),
+			array('vc_editable'),
+			array('tve'),
+			array('tcb_editor'),
+			array('tve_frontend'),
+			array('cornerstone'),
+			array('cs_preview'),
+			array('fusion_load_frontend'),
+			array('fb-edit', 'true'),
+			array('zionbuilder-preview'),
+			array('zionbuilder', 'true'),
+			array('breakdance_editor', 'true')
+		) as $p) {
+
+			if (!isset($_GET[$p[0]])) {
+				continue;
+			}
+
+			if (!isset($p[1]) || (string) $_GET[$p[0]] === $p[1]) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	function excludeAmender(){
+
+		// maybe exclude all admin area... At least for server-side
+		return $this->isBuilder();
 	}
 
 }

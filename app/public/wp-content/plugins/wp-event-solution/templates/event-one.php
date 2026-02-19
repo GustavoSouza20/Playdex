@@ -48,7 +48,7 @@ if( ( ETN_DEMO_SITE === false ) || ( ETN_DEMO_SITE == true && ETN_EVENT_TEMPLATE
                     <?php do_action("etn_before_single_event_content_body", $single_event_id); ?>
 
                     <div class="etn-event-content-body">
-                        <?php echo apply_filters( 'etn_single_event_content_body', the_content() ); ?>
+                        <?php the_content(); ?>
                     </div>
 
                     <?php do_action("etn_after_single_event_content_body", $single_event_id); ?>	

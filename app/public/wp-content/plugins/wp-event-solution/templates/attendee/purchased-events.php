@@ -34,8 +34,8 @@ $header_columns = [
 							</a>
 
 						<?php elseif ( 'event' === $column_id ) : ?>
-							<?php 
-								echo '<a href="'.get_permalink( $user_event->event_id ).'" target="_blank">' . esc_html( $user_event->event_name ) . '</a>';
+							<?php
+								echo '<a href="'.esc_url( get_permalink( $user_event->event_id ) ).'" target="_blank">' . esc_html( $user_event->event_name ) . '</a>';
 							?>
 
 						<?php elseif ( 'event_start_date' === $column_id ) : ?>

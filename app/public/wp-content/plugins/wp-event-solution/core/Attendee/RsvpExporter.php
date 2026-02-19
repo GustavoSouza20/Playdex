@@ -71,6 +71,7 @@ class RsvpExporter implements PostExporterInterface {
 	        $attendee_email     = get_post_meta( $id, 'attendee_email', true );
 	        $rsvp_date          = $post->post_modified;
 	        $guest              = $this->get_guest_details( $id );
+	        $extra_details      = get_post_meta( $id, 'extra_fields');
 			
 	        
 	        
@@ -82,7 +83,8 @@ class RsvpExporter implements PostExporterInterface {
 		        'attendee_name'           => $attendee_name,
 		        'attendee_email'          => $attendee_email,
 		        'received_on'             => $rsvp_date,
-		        'guest'                   => $guest
+		        'guest'                   => $guest,
+		        'extra_details'           => $extra_details,
 	        ];
             array_push( $exported_data, $rsvp_data );
         }
@@ -200,6 +202,7 @@ class RsvpExporter implements PostExporterInterface {
             'attendee_email'    => __( 'Attendee Email', 'eventin' ),
             'received_on'       => __( 'Received On', 'eventin' ),
             'guest'             => __( 'Guests', 'eventin' ),
+            'extra_details'     => __( 'Extra Details', 'eventin' ),
         ];
 
         $columns = apply_filters( 'etn_prepare_attendee_data_columns', $columns );

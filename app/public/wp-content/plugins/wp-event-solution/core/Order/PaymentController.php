@@ -65,7 +65,8 @@
 		 */
 		public function create_payment_permission_check($request)
 		{
-			return true;
+			$nonce = $request->get_header('X-WP-Nonce');
+			return wp_verify_nonce($nonce, 'wp_rest');
 		}
 		
 		/**
@@ -91,7 +92,7 @@
 
 			$payment         = PaymentFactory::get_method($payment_method);
 			$order           = new OrderModel($order_id);
-            $validate_ticket = $order->validate_ticket();
+            $validate_ticket = $order->validate_ticket(true);
 
 			if(($payment instanceof WCPayment) && !class_exists('WooCommerce')){
 				return new WP_Error('payment_error', 'WooCommerce is not active');
@@ -131,7 +132,7 @@
 			$payment_status = !empty($data['payment_status']) ? $data['payment_status'] : 0;
 			$payment_method = !empty($data['payment_method']) ? $data['payment_method'] : null;
             $order           = new OrderModel( $order_id );
-            $validate_ticket = $order->validate_ticket();
+            $validate_ticket = $order->validate_ticket(true);
 
 			$temporary_status = 'failed';
 			$is_enable_payment_timer = etn_get_option( 'ticket_purchase_timer_enable', 'off' );

@@ -158,6 +158,10 @@ class SettingsController extends WP_REST_Controller {
      * @return WP_Error|boolean
      */
     public function get_public_item_permissions_check( $request ) {
+        $nonce = $request->get_header( 'X-Wp-Nonce' );
+        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return false;
+        }
         return true;
     }
 }

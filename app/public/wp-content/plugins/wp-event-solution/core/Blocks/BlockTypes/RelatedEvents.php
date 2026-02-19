@@ -1,9 +1,11 @@
 <?php
 namespace Eventin\Blocks\BlockTypes;
+
 /**
  * RelatedEvents Class.
  */
-class RelatedEvents extends AbstractBlock {
+class RelatedEvents extends AbstractBlock
+{
     /**
      * Block name.
      *
@@ -20,13 +22,14 @@ class RelatedEvents extends AbstractBlock {
      *
      * @return  string Rendered block type output
      */
-    protected function render( $attributes, $content, $block ) {
+    protected function render($attributes, $content, $block)
+    {
         $data = [
             'attributes' => $attributes,
             'content'    => $content,
-            'block'      => $block
+            'block'      => $block,
         ];
-        
-        return $this->include_template( 'event/related-events', $data );
+
+        return $this->include_template('event/related-events', $data);
     }
 }

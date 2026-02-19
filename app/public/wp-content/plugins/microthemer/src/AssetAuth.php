@@ -261,7 +261,6 @@ class AssetAuth extends AssetLoad {
 
 				// Now we have folderLoading config, queue scripts and maybe hook HTML mods
 				$this->contentMethod('initContentAmendments');
-
 			}
 
             // Get the folder loading status of any draft folder too

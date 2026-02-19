@@ -70,7 +70,7 @@ defined( 'ABSPATH' ) || exit;
                 <?php if ( $include_phone ) { ?>
                     <td><?php echo esc_html( $etn_phone ); ?></td>
                 <?php } ?>
-                <td><?php echo $event_display; ?></td>
+                <td><?php echo wp_kses_post( $event_display ); ?></td>
                 <td><?php echo esc_html( $ticket_status_arr[$ticket_status] ); ?></td>
                 <td>
                     <div class=''>

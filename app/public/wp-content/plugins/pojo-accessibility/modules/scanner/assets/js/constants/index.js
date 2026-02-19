@@ -21,6 +21,8 @@ export const RULE_TEXT_CONTRAST = 'text_contrast_sufficient';
 export const RATIO_EXCLUDED = 1;
 
 export const UPGRADE_URL = 'https://go.elementor.com/acc-free-no-AI-scanner';
+export const UPGRADE_GLOBAL_URL =
+	'https://go.elementor.com/acc-global-remediation';
 export const COMPARE_PLAN_URL = 'https://go.elementor.com/acc-AI-limit-scanner';
 export const PAGE_LIMIT_URL = 'https://go.elementor.com/acc-URL-limit-scanner';
 
@@ -67,21 +69,6 @@ export const MANUAL_GROUPS = {
 	tables: [],
 	colorContrast: [],
 	other: [],
-};
-
-export const BLOCK_TITLES = {
-	altText: __('Alternative text', 'pojo-accessibility'),
-	dynamicContent: __('Dynamic Content & ARIA', 'pojo-accessibility'),
-	formsInputsError: __('Forms & Input Errors', 'pojo-accessibility'),
-	keyboardAssistiveTech: __(
-		'Keyboard & Assistive Technologies',
-		'pojo-accessibility',
-	),
-	pageStructureNav: __('Page Structure & Navigation', 'pojo-accessibility'),
-	headingStructure: __('Heading Structure', 'pojo-accessibility'),
-	tables: __('Tables', 'pojo-accessibility'),
-	colorContrast: __('Color contrast', 'pojo-accessibility'),
-	other: __('Other Accessibility Issues', 'pojo-accessibility'),
 };
 
 export const BLOCK_INFO = {

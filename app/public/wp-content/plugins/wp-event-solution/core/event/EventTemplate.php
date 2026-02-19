@@ -33,7 +33,7 @@ class EventTemplate implements HookableInterface {
 
         // redirect to elementor pro archive page if any archive template is assigned
         if ($this->is_elementor_pro_archive_page('etn_archive')) {
-            echo \Elementor\Plugin::$instance->frontend->get_builder_content_for_display($template);
+            echo wp_kses_post( \Elementor\Plugin::$instance->frontend->get_builder_content_for_display($template) );
             return $template;
         }else{
             $enable_event_template_builder = etn_get_option( 'enable_event_template_builder' );

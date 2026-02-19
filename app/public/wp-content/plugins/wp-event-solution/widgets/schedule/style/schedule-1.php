@@ -27,7 +27,7 @@ $i = -1;
             $active_class = (($i == 0) ? 'etn-active' : ' ');
             ?>
             <li>
-                <a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr( $value->ID ) . "-" . $i; ?>'>
+                <a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr( $value->ID ) . "-" . esc_attr($i); ?>'>
                     <span class='etn-date'><?php echo esc_html($schedule_date); ?></span>
                     <span class=etn-day><?php echo esc_html( get_the_title( $value->ID ) ); ?></span>
                 </a>
@@ -46,12 +46,13 @@ $i = -1;
             $j++;
             $schedule_meta = get_post_meta($post->ID);
             $schedule_date = strtotime($schedule_meta['etn_schedule_date'][0]);
-            $schedule_topics = unserialize($schedule_meta['etn_schedule_topics'][0]);
+            $schedule_topics_raw = etn_safe_decode($schedule_meta['etn_schedule_topics'][0] ?? '');
+            $schedule_topics = is_array($schedule_topics_raw) ? $schedule_topics_raw : [];
             $schedule_date = date_i18n("d M", $schedule_date);
             $active_class = (($j == 0) ? 'tab-active' : ' ');
             ?>
             <!-- start repeatable item -->
-            <div class='etn-tab <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($post->ID) . "-" . $j; ?>'>
+            <div class='etn-tab <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($post->ID) . "-" . esc_attr($j); ?>'>
                 <?php
                 if( is_array( $schedule_topics ) && !empty( $schedule_topics )){
                     foreach ($schedule_topics as $topic) {

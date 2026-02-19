@@ -753,6 +753,7 @@ $this->default_preferences = array(
 	"wireframe_mode" => 0,
 	"code_font_size" => 14,
 	"current_revision" => 0,
+	"ai_priority" => 'speed',
 	"allow_scss" => 0, // if enabled by default, invalid css/scss will prevent stylesheet update.
 	"lastMultiTab" => array(
 		'html' => array(

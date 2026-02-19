@@ -28,7 +28,7 @@ class Rating
     private $duplication = \false;
     private $never_show_triggered = \false;
     private $rating_show_interval = 30;
-    private $api_url = 'https://product.themewinter.com/auth'; // API URL for rating
+    private $api_url = 'https://banner.themefunction.com'; // API URL for rating
     /**
      * scripts version
      *

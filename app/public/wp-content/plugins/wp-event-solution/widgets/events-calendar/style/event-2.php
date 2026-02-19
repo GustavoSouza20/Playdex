@@ -26,16 +26,16 @@ $data           = Helper::post_data_query('etn', $event_count, $order, $event_ca
 										<!-- thumbnail -->
 										<div class="etn-event-thumb">
 											<?php if ( get_the_post_thumbnail_url($value->ID) ): ?>
-												<a 
-													href="<?php echo esc_url(get_the_permalink($value->ID)); ?>" 
-													aria-label="<?php echo get_the_title(); ?>"
+												<a
+													href="<?php echo esc_url(get_the_permalink($value->ID)); ?>"
+													aria-label="<?php echo esc_attr(get_the_title()); ?>"
 												>
 													<?php echo get_the_post_thumbnail($value->ID, 'large');  ?>
 												</a>
 											<?php elseif( $banner_image_url ): ?>
-												<a 
-													href="<?php echo esc_url(get_the_permalink($value->ID)); ?>" 
-													aria-label="<?php echo get_the_title(); ?>"
+												<a
+													href="<?php echo esc_url(get_the_permalink($value->ID)); ?>"
+													aria-label="<?php echo esc_attr(get_the_title()); ?>"
 												>
 													<img src="<?php echo esc_url($banner_image_url); ?>" alt="Image">
 												</a>
@@ -58,7 +58,7 @@ $data           = Helper::post_data_query('etn', $event_count, $order, $event_ca
 														<?php if (!empty($etn_ticket_price) && class_exists('woocommerce')){  ?>
 																<div class='etn-ticket-price'>
 																		<i class="etn-icon etn-money-bill"></i>
-																		<?php echo get_woocommerce_currency_symbol(); ?><?php echo esc_html($etn_ticket_price); ?>
+																		<?php echo esc_html(get_woocommerce_currency_symbol()); ?><?php echo esc_html($etn_ticket_price); ?>
 																</div>
 																<?php } ?>
 												</div>
@@ -79,7 +79,7 @@ $data           = Helper::post_data_query('etn', $event_count, $order, $event_ca
 																		<?php
 																} else {
 																		?>
-																		<a href="<?php echo esc_url(get_the_permalink($value->ID)); ?>" class="etn-btn etn-btn-border" title="<?php echo get_the_title($value->ID); ?>"><?php echo esc_html__('Attend', 'eventin') ?> <i class="etn-icon etn-arrow-right"></i></a>
+																		<a href="<?php echo esc_url(get_the_permalink($value->ID)); ?>" class="etn-btn etn-btn-border" title="<?php echo esc_attr(get_the_title($value->ID)); ?>"><?php echo esc_html__('Attend', 'eventin') ?> <i class="etn-icon etn-arrow-right"></i></a>
 																		<?php
 																}
 																?>

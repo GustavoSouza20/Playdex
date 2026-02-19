@@ -30,6 +30,7 @@ $event_end_time      = $event->etn_end_time;
 $event_end_date_time = strtotime( $event_end_date . ' ' . $event_end_time );
 
 ?>
+<?php Helper::etn_template_include(); ?>
 <div class="etn-widget etn-recurring-widget <?php echo esc_attr($active_class); ?>"
     <?php echo ($i < 3) ? 'style="display:block"' : 'style="display:none"'; ?>>
     <div class="etn-row">

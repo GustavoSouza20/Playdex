@@ -47,7 +47,7 @@ class Api extends \Etn\Base\Api_Handler {
 				}
 
 				if ( in_array( $key, $serialized_meta ) ) {
-					$event_meta[$key] = maybe_unserialize( $event_meta[$key] );
+					$event_meta[$key] = etn_safe_decode( $event_meta[$key] );
 				}
 
 				
@@ -195,16 +195,14 @@ class Api extends \Etn\Base\Api_Handler {
 		$request     = $this->request;
 		$settings    = etn_get_option();
 
-		if ( ! is_admin() && ! current_user_can( 'manage_options' ) ) {
-			if ( ! wp_verify_nonce( $this->request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
-				$messages[] = esc_html__( 'Nonce is not valid! Please try again.', 'eventin' );
-			} else {
-				if ( ! empty( $settings ) ) {
-					$content['settings'] = $settings;
-				}
-			}
+		// Require proper capability - permission callback handles this but double-check
+		if ( ! current_user_can( 'manage_options' ) ) {
+			$messages[] = esc_html__( 'You haven\'t authorization permission to view settings.', 'eventin' );
 		} else {
-			$messages[] = esc_html__( 'You haven\'t authorization permission to update settings.', 'eventin' );
+			if ( ! empty( $settings ) ) {
+				$status_code         = 1;
+				$content['settings'] = $settings;
+			}
 		}
 
 		$sample_date      = strtotime( date( 'd' ) . " " . date( 'M' ) . " " . date( 'Y' ) );
@@ -235,27 +233,29 @@ class Api extends \Etn\Base\Api_Handler {
 		$messages    = $content    = [];
 		$request     = json_decode( $this->request->get_body(), true );
 
-		if ( ! is_admin() && ! current_user_can( 'manage_options' ) ) {
-
-			if ( ! wp_verify_nonce( $this->request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
-				$messages[] = esc_html__( 'Nonce is not valid! Please try again.', 'eventin' );
-			} else {
-				if ( isset( $request ) && ! empty( $request ) ) {
-					$status_code                           = 1;
-					$all_settings                          = get_option( 'etn_event_options', [] );
-					$settings                              = $request;
-					$all_settings['events_per_page']       = isset( $settings['events_per_page'] ) ? absint( $settings['events_per_page'] ) : 10;
-					$all_settings['date_format']           = isset( $settings['date_format'] ) ? $settings['date_format'] : "";
-					$all_settings['time_format']           = isset( $settings['time_format'] ) ? $settings['time_format'] : "";
-					$all_settings['etn_primary_color']     = isset( $settings['etn_primary_color'] ) ? $settings['etn_primary_color'] : "";
-					$all_settings['etn_secondary_color']   = isset( $settings['etn_secondary_color'] ) ? $settings['etn_secondary_color'] : "";
-					$all_settings['attendee_registration'] = isset( $settings['attendee_registration'] ) ? $settings['attendee_registration'] : "";
-					$all_settings['sell_tickets']          = isset( $settings['sell_tickets'] ) ? $settings['sell_tickets'] : "";
-					update_option( 'etn_event_options', $all_settings );
-				}
-			}
-		} else {
+		// Require proper capability - permission callback handles this but double-check
+		if ( ! current_user_can( 'manage_options' ) ) {
 			$messages[] = esc_html__( 'You haven\'t authorization permission to update settings.', 'eventin' );
+		} else {
+			if ( isset( $request ) && ! empty( $request ) ) {
+				$status_code  = 1;
+				$all_settings = get_option( 'etn_event_options', [] );
+				$settings     = $request;
+
+				// Sanitize all inputs to prevent XSS and other attacks
+				$all_settings['events_per_page']       = isset( $settings['events_per_page'] ) ? absint( $settings['events_per_page'] ) : 10;
+				$all_settings['date_format']           = isset( $settings['date_format'] ) ? sanitize_text_field( $settings['date_format'] ) : "";
+				$all_settings['time_format']           = isset( $settings['time_format'] ) ? sanitize_text_field( $settings['time_format'] ) : "";
+
+				// CRITICAL: Sanitize color fields to prevent XSS
+				$all_settings['etn_primary_color']     = isset( $settings['etn_primary_color'] ) ? sanitize_hex_color( $settings['etn_primary_color'] ) : "";
+				$all_settings['etn_secondary_color']   = isset( $settings['etn_secondary_color'] ) ? sanitize_hex_color( $settings['etn_secondary_color'] ) : "";
+
+				$all_settings['attendee_registration'] = isset( $settings['attendee_registration'] ) ? sanitize_text_field( $settings['attendee_registration'] ) : "";
+				$all_settings['sell_tickets']          = isset( $settings['sell_tickets'] ) ? sanitize_text_field( $settings['sell_tickets'] ) : "";
+
+				update_option( 'etn_event_options', $all_settings );
+			}
 		}
 
 		return [
@@ -556,7 +556,7 @@ class Api extends \Etn\Base\Api_Handler {
 			$filtered_seat_plan = array_filter($seat_plan, function($seat) use ($ticket_variations, $current_datetime,$is_admin) {
 				// Find the matching ticket variation
 				foreach ($ticket_variations as $variation) {
-					if ($variation['etn_ticket_name'] === $seat['ticketType']) {
+					if (!empty($seat['ticketType']) && !empty($variation['etn_ticket_name']) && $variation['etn_ticket_name'] === $seat['ticketType']) {
 						// Check if the ticket variation is expired (considering both date and time)
 						$end_date = $variation['end_date'];
 						$end_time = $variation['end_time'];
@@ -606,6 +606,9 @@ class Api extends \Etn\Base\Api_Handler {
 		$event_id           = ! empty( $request['event_id'] ) ? intval( $request['event_id'] ) : 0;
 		$seat_plan          = ! empty( $request['seat_plan'] ) ?  $request['seat_plan']  : [];
 		$seat_plan_settings = ! empty( $request['seat_plan_settings'] ) ? $request['seat_plan_settings']  : [];
+
+		$is_seat_plan_already_exist = get_post_meta( $event_id, 'seat_plan', true );
+
 		if ( ! empty( $seat_plan ) ) {
 			$chair_id = 1;
 			foreach ($seat_plan as $key => &$seat) {
@@ -615,8 +618,12 @@ class Api extends \Etn\Base\Api_Handler {
 						$chair_id++;
 					}
 				}
-				
-				$seat['id'] = $key;
+				if ( !empty( $is_seat_plan_already_exist ) ) {
+					$seat['id'] = $key;
+				}
+				else {
+					$seat['id'] = uniqid();
+				}
 			}
 		}
 
@@ -624,6 +631,7 @@ class Api extends \Etn\Base\Api_Handler {
 			$status_code = 1;
 			update_post_meta( $event_id, 'seat_plan', $seat_plan );
 			update_post_meta( $event_id, 'seat_plan_settings', $seat_plan_settings );
+			update_post_meta( $event_id, 'enable_seatmap', true );
 			$messages = [esc_html__( 'Event Seat Mapping has been saved successfully', 'eventin' )];
 		}else{
 			$messages = [esc_html__( 'Event ID not found', 'eventin' )];

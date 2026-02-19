@@ -101,6 +101,6 @@ abstract class Mailable {
             return ob_get_clean();
         }
 
-        throw new Exception("Template not found: {$content}");
+        throw new Exception( esc_html( "Template not found: {$content}" ) );
     }
 }

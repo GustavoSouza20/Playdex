@@ -16,9 +16,9 @@ $i = 0;
 							$active_class = ($i===1) ? 'etn-active' : '';
 							?>
 							<li>
-									<a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($widget_id) . "-" . $i; ?>'>
+									<a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>' data-id='tab<?php echo esc_attr($widget_id) . "-" . esc_attr($i); ?>'>
 											<?php
-												echo esc_html($category_name); 
+												echo esc_html($category_name);
 											?>
 									</a>
 							</li>
@@ -37,7 +37,7 @@ $i = 0;
 							$event_cat = [$event_cat];
 							$active_class = (($j == 1) ? 'tab-active' : '');
 							?>
-							<div class="etn-tab <?php echo esc_attr($active_class); ?>" data-id='tab<?php echo esc_attr($widget_id) . "-" . $j; ?>'>
+							<div class="etn-tab <?php echo esc_attr($active_class); ?>" data-id='tab<?php echo esc_attr($widget_id) . "-" . esc_attr($j); ?>'>
 									<?php
 									include \Wpeventin::plugin_dir() . "widgets/events/style/{$style}.php";
 									?>

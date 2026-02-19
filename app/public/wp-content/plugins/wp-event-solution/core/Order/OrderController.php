@@ -144,7 +144,7 @@ class OrderController extends WP_REST_Controller {
      * @return WP_Error|boolean
      */
     public function get_item_permissions_check( $request ) {
-        return true;
+        return current_user_can( 'etn_manage_event' ) || wp_verify_nonce( $request->get_header( 'X-Wp-Nonce' ), 'wp_rest' );
     }
 
     /**
@@ -344,6 +344,11 @@ class OrderController extends WP_REST_Controller {
         $response = $this->prepare_item_for_response( $order, $request ); 
 		
         do_action( 'eventin_after_order_create', $order, $attendees);
+
+        if ( 'pending' == $order->status ) {
+            $remaining_time_to_pay = get_post_meta( $order->id, 'remaining_time_to_pay', true );        
+            wp_schedule_single_event( time() + ( (int)$remaining_time_to_pay + 1 ), 'eventin_release_held_tickets', [ $order->id ] );
+        }
 	    
         return rest_ensure_response( $response );
     }
@@ -368,15 +373,41 @@ class OrderController extends WP_REST_Controller {
             return new WP_Error( 'invalid_data', __( 'Invalid event ID or seat IDs.', 'eventin' ), ['status' => 400] );
         }
 
-        $event_tickets = maybe_unserialize( get_post_meta( $event_id, 'etn_ticket_variations', true ) );
-        $pending_seats = maybe_unserialize( get_post_meta( $event_id, 'pending_seats', true ));
-
-        if ( !is_array($pending_seats) ) {
+        $event_tickets = etn_safe_decode( get_post_meta( $event_id, 'etn_ticket_variations', true ) );
+        $pending_seats = etn_safe_decode( get_post_meta( $event_id, 'pending_seats', true ));
+        if(empty($pending_seats)){
             $pending_seats = [];
         }
+        $booked_seats = get_post_meta( $event_id, '_etn_seat_unique_id', true );
+        $already_booked_seats = $booked_seats ? explode(',', $booked_seats) : [];
 
-        if ( is_array( $pending_seats ) ) {
+        // Validate tickets
+        $ticket_validation = etn_validate_event_tickets( $event_id, $booked_tickets );
+        if (is_wp_error($ticket_validation)) {
+            $response = [
+                'success' => false,
+                'message' => __('The number of tickets u have selected is not available.', 'eventin'),
+                'booked_tickets' => $booked_tickets,
+            ];
+            return rest_ensure_response($response);
+        }
+
+        // Validate seats
+        if ( !empty($pending_seats) ) {
             $duplicate_seats = array_intersect($seat_ids, $pending_seats);
+            if (!empty($duplicate_seats)) {
+                $response = [
+                    'success' => false,
+                    'message' => __( 'Some of selected seats are already booked.', 'eventin' ),
+                    'booked_tickets' => $duplicate_seats,
+                ];
+                return rest_ensure_response( $response );
+            }
+        }
+
+        // Validate seats
+        if ( !empty($already_booked_seats) ) {
+            $duplicate_seats = array_intersect($seat_ids, $already_booked_seats);
             if (!empty($duplicate_seats)) {
                 $response = [
                     'success' => false,
@@ -415,7 +446,9 @@ class OrderController extends WP_REST_Controller {
         }
 
         $ticket_purchase_timer = etn_get_option( 'ticket_purchase_timer', 10 ) + 1;
-        wp_schedule_single_event( time() + ( $ticket_purchase_timer * MINUTE_IN_SECONDS ), 'eventin_release_held_seats_and_tickets', [ $event_id, $seat_ids,$booked_tickets ] );
+        $data = [ $event_id, $seat_ids, $booked_tickets ];
+
+        wp_schedule_single_event( time() + ( $ticket_purchase_timer * MINUTE_IN_SECONDS ), 'eventin_release_held_seats_and_tickets', $data );
 
         $response = [
             'success' => true,
@@ -436,7 +469,7 @@ class OrderController extends WP_REST_Controller {
      * @return true|WP_Error True if the request has access to create items, WP_Error object otherwise.
      */
     public function create_item_permissions_check( $request ) {
-        return true;
+        return wp_verify_nonce( $request->get_header( 'X-Wp-Nonce' ), 'wp_rest' );
     }
 
     /**
@@ -457,12 +490,41 @@ class OrderController extends WP_REST_Controller {
 			}
 			
             $id        = intval( $request['id'] );
-		    $order     = new OrderModel( $id );
+		    $seat_ids = etn_safe_decode(get_post_meta($id, 'seat_ids', true));
+            $event_id = get_post_meta($id, 'event_id', true);
+            $tickets = etn_safe_decode(get_post_meta($id, 'tickets', true));
+
+            if ( $status === "completed" ) {
+                if (!empty($seat_ids)) {
+                    $validate_seats = etn_validate_seat_ids( $event_id, $seat_ids );
+                    if (is_wp_error($validate_seats)) {
+                        return $validate_seats;
+                    }
+                }
+                else{
+                    $validate_tickets = etn_validate_event_tickets( $event_id, $tickets );
+                    if (is_wp_error($validate_tickets)) {
+                        return $validate_tickets;
+                    }
+                }
+            }
+                        
+            $order     = new OrderModel( $id );
+            $current_status = $order->status;
+            if ( $current_status === 'failed' && $status === 'refunded' ) {
+                return new WP_Error( 'order_update_booking_status_error', "You can't refund a failed order", ['status' => 400] );
+            }
+
+            if ( $current_status === 'refunded' && $status === 'failed' ) {
+                return new WP_Error( 'order_update_booking_status_error', "You can't fail a refunded order", ['status' => 400] );
+            }
+
 		    
 		    $order->update(["status" => $status]);
 			
 		    $attendeeModel = new Attendee_Model();
 		    $attendees = $attendeeModel->get_attendees_model_by_eventin_order_id(intval($order->id));
+
 		    
 			foreach ($attendees as $attendee) {
 				if ( $status === "completed") {
@@ -472,11 +534,10 @@ class OrderController extends WP_REST_Controller {
 				}
 			}
 			
+			
 			if ( $order->payment_method == "wc" ) {
 				$status = $status == "failed" ? "cancelled" : $status;
 				$this->wc_order_status_update($id, $status);
-
-                do_action( 'eventin_order_status_failed', $order );
 			}
 			
 		    $response   = $this->prepare_item_for_response( $order, $request );
@@ -509,6 +570,25 @@ class OrderController extends WP_REST_Controller {
                 else{
                     do_action( 'eventin_order_refund', $order );
                 }
+            }
+
+            
+            if ( 'failed' === $status || 'cancelled' === $status ) {
+                if ($current_status === 'completed') {
+                    $booked_tickets = $order->tickets;
+                    $formatted_booked_tickets = [];
+                    if (!empty($booked_tickets)) {
+                        foreach ($booked_tickets as $ticket) {
+                            $formatted_booked_tickets[] = [
+                                'ticket_slug' => $ticket['ticket_slug'],
+                                'ticket_quantity' => $ticket['ticket_quantity']
+                            ];
+                        }
+                    }
+
+                    \Etn\Utils\Helper::decrease_count_by_ticket_slug($formatted_booked_tickets, $event_id);
+                }
+                do_action( 'eventin_order_status_failed', $order );
             }
 			
 			return rest_ensure_response( $response );
@@ -566,6 +646,21 @@ class OrderController extends WP_REST_Controller {
 
         $order = new OrderModel( $id );
 
+        if ($order->status) {
+            $booked_tickets = $order->tickets;
+            $formatted_booked_tickets = [];
+            if (!empty($booked_tickets)) {
+                foreach ($booked_tickets as $ticket) {
+                    $formatted_booked_tickets[] = [
+                        'ticket_slug' => $ticket['ticket_slug'],
+                        'ticket_quantity' => $ticket['ticket_quantity']
+                    ];
+                }
+            }
+
+            \Etn\Utils\Helper::decrease_count_by_ticket_slug($formatted_booked_tickets, $order->event_id);
+        }
+
         $previous = $this->prepare_item_for_response( $order, $request );
 
         do_action( 'eventin_order_before_delete', $order );
@@ -612,7 +707,20 @@ class OrderController extends WP_REST_Controller {
 
         foreach ( $ids as $id ) {
             $order = new OrderModel( $id );
-            
+
+            $booked_tickets = $order->tickets;
+            $formatted_booked_tickets = [];
+            if (!empty($booked_tickets)) {
+                foreach ($booked_tickets as $ticket) {
+                    $formatted_booked_tickets[] = [
+                        'ticket_slug' => $ticket['ticket_slug'],
+                        'ticket_quantity' => $ticket['ticket_quantity']
+                    ];
+                }
+            }
+
+            \Etn\Utils\Helper::decrease_count_by_ticket_slug($formatted_booked_tickets, $order->event_id);
+
             do_action( 'eventin_order_before_delete', $order );
 
             if ( $order->delete() ) {
@@ -727,10 +835,19 @@ class OrderController extends WP_REST_Controller {
             return $validate;
         }
 
-        $ticket_validation = etn_validate_event_tickets( $input_data['event_id'], $input_data['tickets'] );
+
+        $ticket_validation = etn_validate_event_tickets( $input_data['event_id'], $input_data['tickets'],true );
 
         if ( is_wp_error( $ticket_validation ) ) {
             return $ticket_validation;
+        }
+
+        if ( isset( $input_data['seat_ids'] ) ) {
+            $seat_validation = etn_validate_seat_ids( $input_data['event_id'], $input_data['seat_ids'] );
+
+            if ( is_wp_error( $seat_validation ) ) {
+                return $seat_validation;
+            }
         }
 
         $order_data = [];
@@ -835,6 +952,7 @@ class OrderController extends WP_REST_Controller {
                     'etn_event_id'         => $event_id,
                     'etn_status'           => '',
                     'ticket_name'          => $ticket['etn_ticket_name'],
+                    'ticket_slug'          => $ticket_slug,
                     'etn_ticket_price'     => $ticket['etn_ticket_price'],
                     'etn_info_edit_token'  => md5( $ticket['etn_ticket_name'] ),
                     'etn_unique_ticket_id' => substr(md5($ticket['etn_ticket_price']), 0, 10),
@@ -979,7 +1097,7 @@ class OrderController extends WP_REST_Controller {
      * @return  JSON
      */
     public function export_item_permissions_check( $request ) {
-        return true;
+        return current_user_can( 'etn_manage_order' );
     }
 
     /**
@@ -1013,7 +1131,7 @@ class OrderController extends WP_REST_Controller {
      * @return  JSON
      */
     public function import_item_permissions_check( $request ) {
-        return true;
+        return current_user_can('etn_manage_order');
     }
 
     /**

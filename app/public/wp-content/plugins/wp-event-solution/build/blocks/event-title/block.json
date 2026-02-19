@@ -15,6 +15,9 @@
     "eventId": {
       "type": "string"
     },
+    "className": {
+      "type": "string"
+    },
     "htmlTag": {
       "type": "string",
       "default": "h2"
@@ -66,6 +69,9 @@
         }
       }
     }
+  },
+  "supports": {
+    "customClassName": true
   },
   "editorScript": "file:./index.js"
 }

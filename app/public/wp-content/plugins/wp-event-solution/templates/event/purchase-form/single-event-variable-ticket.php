@@ -4,7 +4,7 @@ use Etn\Core\Event\Event_Model;
 use Etn\Utils\Helper;
  
 $tickets_variations = get_post_meta($single_event_id,'etn_ticket_variations', true); 
-$style = isset($style) ? $style : 'style-1';
+$style = isset($style_variant) ? $style_variant : 'style-1';
 
 if(!empty($tickets_variations)){
 ?>

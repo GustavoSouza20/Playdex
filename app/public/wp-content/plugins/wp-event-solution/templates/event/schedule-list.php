@@ -41,11 +41,14 @@ if ( is_array($etn_event_schedule) && !empty($etn_event_schedule) ) {
                     $schedule_meta = get_post_meta($single_schedule_id);
                     $schedule_date = !empty( $schedule_meta['etn_schedule_date'][0] ) ? date_i18n("d M", strtotime($schedule_meta['etn_schedule_date'][0])) : "";
                     $active_class = (($i == 0) ? 'etn-active' : ' ');
+                    $hide_date_on_event_page = get_post_meta($post->ID, 'hide_date_on_event_page', true);
                     ?>
                     <li>
                         <a href='#' class='etn-tab-a <?php echo esc_attr($active_class); ?>'
                             data-id='tab<?php echo esc_attr($i); ?>'>
+                            <?php if ( empty($hide_date_on_event_page) ) : ?>
                             <span class='etn-date'><?php echo esc_html($schedule_date); ?></span>
+                            <?php endif; ?>
                             <span class=etn-day><?php echo esc_html($post->post_title); ?></span>
                         </a>
                     </li>
@@ -62,7 +65,8 @@ if ( is_array($etn_event_schedule) && !empty($etn_event_schedule) ) {
                     $single_schedule_id = $post->ID;
                     $j++;
                     $schedule_meta = get_post_meta($single_schedule_id);
-                    $schedule_topics = unserialize($schedule_meta['etn_schedule_topics'][0] ?? '') ?: [];
+                    $schedule_topics_raw = etn_safe_decode($schedule_meta['etn_schedule_topics'][0] ?? '');
+                    $schedule_topics = is_array($schedule_topics_raw) ? $schedule_topics_raw : [];
                     $schedule_date = !empty( $schedule_meta['etn_schedule_date'][0] ) ? date_i18n("d M", strtotime($schedule_meta['etn_schedule_date'][0]) ) : "";
                     $active_class = (($j == 0) ? 'tab-active' : ' ');
                     ?>
@@ -72,21 +76,23 @@ if ( is_array($etn_event_schedule) && !empty($etn_event_schedule) ) {
                         $etn_tab_time_format = ( isset( $event_options["time_format"] ) && $event_options["time_format"] == '24' ) ? "H:i" : get_option( 'time_format' );
                         if( is_array( $schedule_topics ) && !empty($schedule_topics) ){
                             foreach ($schedule_topics as $topic) :
-                                $etn_schedule_topic         = (isset($topic['etn_schedule_topic']) ? $topic['etn_schedule_topic'] : '');
-                                $etn_schedule_start_time    = !empty($topic['etn_shedule_start_time']) ? date_i18n($etn_tab_time_format, strtotime($topic['etn_shedule_start_time'])) : '';
-                                $etn_schedule_end_time      = !empty($topic['etn_shedule_end_time']) ? date_i18n($etn_tab_time_format, strtotime($topic['etn_shedule_end_time'])) : '';
-                                $etn_schedule_room          = (isset($topic['etn_shedule_room']) ? $topic['etn_shedule_room'] : '');
-                                $etn_schedule_objective     = (isset($topic['etn_shedule_objective']) ? $topic['etn_shedule_objective'] : '');
-                                $etn_schedule_speaker       = (isset($topic['speakers']) ? $topic['speakers'] : []);
-                                $dash_sign	                = ( !empty( $etn_schedule_start_time ) && !empty( $etn_schedule_end_time ) ) ? " - " : " ";
-                                ?>
+                                // Skip topic if is_active is set and equals 0
+                                if ( !isset($topic['is_active']) || $topic['is_active'] != 0 ) :
+                                    $etn_schedule_topic         = (isset($topic['etn_schedule_topic']) ? $topic['etn_schedule_topic'] : '');
+                                    $etn_schedule_start_time    = !empty($topic['etn_shedule_start_time']) ? date_i18n($etn_tab_time_format, strtotime($topic['etn_shedule_start_time'])) : '';
+                                    $etn_schedule_end_time      = !empty($topic['etn_shedule_end_time']) ? date_i18n($etn_tab_time_format, strtotime($topic['etn_shedule_end_time'])) : '';
+                                    $etn_schedule_room          = (isset($topic['etn_shedule_room']) ? $topic['etn_shedule_room'] : '');
+                                    $etn_schedule_objective     = (isset($topic['etn_shedule_objective']) ? $topic['etn_shedule_objective'] : '');
+                                    $etn_schedule_speaker       = (isset($topic['speakers']) ? $topic['speakers'] : []);
+                                    $dash_sign	                = ( !empty( $etn_schedule_start_time ) && !empty( $etn_schedule_end_time ) ) ? " - " : " ";
+                                    ?>
             <div class='etn-single-schedule-item etn-row'>
                 <div class='etn-schedule-info etn-col-sm-4'>
                     <?php
                                         if(!empty($etn_schedule_start_time) || !empty( $etn_schedule_end_time )){
                                             ?>
                     <span class='etn-schedule-time'>
-                        <?php echo esc_html($etn_schedule_start_time) . $dash_sign . esc_html($etn_schedule_end_time); ?>
+                        <?php echo esc_html($etn_schedule_start_time) . esc_html($dash_sign) . esc_html($etn_schedule_end_time); ?>
                     </span>
                     <?php
                                         }
@@ -140,7 +146,8 @@ if ( is_array($etn_event_schedule) && !empty($etn_event_schedule) ) {
                     <?php endif; ?>
                 </div>
             </div>
-            <?php 
+            <?php
+                                endif; // End is_active check
                             endforeach; 
                         }
                         ?>

@@ -77,7 +77,7 @@ var $maxStrLenRead;
 
 	function getMetrics($file) {
 		$this->filename = $file;
-		$this->fh = fopen($file,'rb') or die('Can\'t open file ' . $file);
+		$this->fh = fopen($file,'rb') or die( esc_html( 'Can\'t open file ' . $file ) );
 		$this->_pos = 0;
 		$this->charWidths = '';
 		$this->glyphPos = array();
@@ -88,12 +88,12 @@ var $maxStrLenRead;
 		$this->descent = 0;
 		$this->TTCFonts = array();
 		$this->version = $version = $this->read_ulong();
-		if ($version==0x4F54544F) 
-			die("Postscript outlines are not supported");
-		if ($version==0x74746366) 
-			die("ERROR - TrueType Fonts Collections not supported");
+		if ($version==0x4F54544F)
+			die( esc_html( "Postscript outlines are not supported" ) );
+		if ($version==0x74746366)
+			die( esc_html( "ERROR - TrueType Fonts Collections not supported" ) );
 		if (!in_array($version, array(0x00010000,0x74727565)))
-			die("Not a TrueType font: version=".$version);
+			die( esc_html( "Not a TrueType font: version=".$version ) );
 		$this->readTableDirectory();
 		$this->extractInfo();
 		fclose($this->fh);
@@ -250,7 +250,7 @@ var $maxStrLenRead;
 
 	function get_table($tag) {
 		list($pos, $length) = $this->get_table_pos($tag);
-		if ($length == 0) { die('Truetype font ('.$this->filename.'): error reading table: '.$tag); }
+		if ($length == 0) { die( esc_html( 'Truetype font ('.$this->filename.'): error reading table: '.$tag ) ); }
 		fseek($this->fh,$pos);
 		return (fread($this->fh,$length));
 	}
@@ -279,7 +279,7 @@ var $maxStrLenRead;
 			$name_offset = $this->seek_table("name");
 			$format = $this->read_ushort();
 			if ($format != 0)
-				die("Unknown name table format ".$format);
+				die( esc_html( "Unknown name table format ".$format ) );
 			$numRecords = $this->read_ushort();
 			$string_data_offset = $name_offset + $this->read_ushort();
 			$names = array(1=>'',2=>'',3=>'',4=>'',6=>'');
@@ -355,7 +355,7 @@ var $maxStrLenRead;
 		$indexToLocFormat = $this->read_ushort();
 		$glyphDataFormat = $this->read_ushort();
 		if ($glyphDataFormat != 0)
-			die('Unknown glyph data format '.$glyphDataFormat);
+			die( esc_html( 'Unknown glyph data format '.$glyphDataFormat ) );
 
 		///////////////////////////////////
 		// hhea metrics table
@@ -381,7 +381,7 @@ var $maxStrLenRead;
 			$this->skip(2);
 			$fsType = $this->read_ushort();
 			if ($fsType == 0x0002 || ($fsType & 0x0300) != 0) {
-				die('ERROR - Font file '.$this->filename.' cannot be embedded due to copyright restrictions.');
+				die( esc_html( 'ERROR - Font file '.$this->filename.' cannot be embedded due to copyright restrictions.' ) );
 				$this->restrictedUse = true;
 			}
 			$this->skip(20);
@@ -494,7 +494,7 @@ var $maxStrLenRead;
 
 	function makeSubset($file, &$subset) {
 		$this->filename = $file;
-		$this->fh = fopen($file ,'rb') or die('Can\'t open file ' . $file);
+		$this->fh = fopen($file ,'rb') or die( esc_html( 'Can\'t open file ' . $file ) );
 		$this->_pos = 0;
 		$this->charWidths = '';
 		$this->glyphPos = array();

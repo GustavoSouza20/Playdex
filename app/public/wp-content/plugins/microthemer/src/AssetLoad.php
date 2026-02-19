@@ -22,6 +22,7 @@ if (!class_exists('\Microthemer\AssetLoad')){
 
 		use FrontAndBackTrait;
 
+		var $pluginVersion = '7.5.3.6';
 		protected $isBlockEditorScreen;
 		var $logicSettings = array();
 		public $context = 'load';
@@ -816,12 +817,6 @@ if (!class_exists('\Microthemer\AssetLoad')){
 			}
 
 			return $classes;
-		}
-
-		/* Integrations */
-
-		function isBricksUi(){
-			return !isset($_GET['brickspreview']) && isset($_GET['bricks']) && $_GET['bricks'] === 'run';
 		}
 
 	}

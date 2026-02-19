@@ -34,10 +34,11 @@ class Admin {
 
 	/**
 	 * Enqueue the admin scripts
-	 * 
+	 *
 	 * @return void
 	 */
 	public function eventin_ai_admin_scripts() {
+		wp_enqueue_style( 'etn-ai-admin-css', \Wpeventin::plugin_url() . 'build/css/index-ai-style.css', [], \Wpeventin::version() );
 		wp_enqueue_script( 'etn-ai-admin-js', \Wpeventin::core_url() . 'modules/eventin-ai/assets/js/admin.js', [ 'jquery', 'wp-hooks' ], \Wpeventin::version(), true );
 		$eventin_ai_local_data = [
 			'evnetin_ai_active'  => class_exists( 'EventinAI' ) ? true : false,

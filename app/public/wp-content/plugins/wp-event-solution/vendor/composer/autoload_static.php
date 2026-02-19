@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
+class ComposerStaticInit51060d1ef7b9244f23975c06b5e403b1
 {
     public static $files = array (
         '65bd208c04f25e98cf12b5c37b014f1e' => __DIR__ . '/..' . '/themewinter/email-notification-sdk/src/Utils/global-helpers.php',
@@ -81,6 +81,7 @@ class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
         'Etn\\Core\\Event\\Event_Model' => __DIR__ . '/../..' . '/core/event/event-model.php',
         'Etn\\Core\\Event\\Helper' => __DIR__ . '/../..' . '/core/event/helper.php',
         'Etn\\Core\\Event\\Hooks' => __DIR__ . '/../..' . '/core/event/hooks.php',
+        'Etn\\Core\\Event\\Pages\\Event_single_post' => __DIR__ . '/../..' . '/core/event/pages/event-single-post.php',
         'Etn\\Core\\Event\\Tags' => __DIR__ . '/../..' . '/core/event/tags.php',
         'Etn\\Core\\Modules\\Eventin_Ai\\Admin\\Admin' => __DIR__ . '/../..' . '/core/modules/eventin-ai/admin/admin.php',
         'Etn\\Core\\Modules\\Eventin_Ai\\Eventin_AI' => __DIR__ . '/../..' . '/core/modules/eventin-ai/eventin-ai.php',
@@ -146,6 +147,7 @@ class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
         'Eventin\\Blocks\\BlockTypes\\CustomImage' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/CustomImage.php',
         'Eventin\\Blocks\\BlockTypes\\DiamondSeparator' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/DiamondSeparator.php',
         'Eventin\\Blocks\\BlockTypes\\EventAddToCalender' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/EventAddToCalender.php',
+        'Eventin\\Blocks\\BlockTypes\\EventAttendee' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/EventAttendee.php',
         'Eventin\\Blocks\\BlockTypes\\EventBanner' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/EventBanner.php',
         'Eventin\\Blocks\\BlockTypes\\EventCalendar' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/EventCalendar.php',
         'Eventin\\Blocks\\BlockTypes\\EventCategory' => __DIR__ . '/../..' . '/core/Blocks/BlockTypes/EventCategory.php',
@@ -211,9 +213,13 @@ class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
         'Eventin\\Event\\Api\\EventController' => __DIR__ . '/../..' . '/core/event/Api/EventController.php',
         'Eventin\\Event\\Api\\EventTagController' => __DIR__ . '/../..' . '/core/event/Api/EventTagController.php',
         'Eventin\\Event\\Api\\TransactionController' => __DIR__ . '/../..' . '/core/event/Api/TransactionController.php',
+        'Eventin\\Event\\CategoryExporter' => __DIR__ . '/../..' . '/core/event/CategoryExporter.php',
+        'Eventin\\Event\\CategoryImporter' => __DIR__ . '/../..' . '/core/event/CategoryImporter.php',
         'Eventin\\Event\\EventExporter' => __DIR__ . '/../..' . '/core/event/EventExporter.php',
         'Eventin\\Event\\EventImporter' => __DIR__ . '/../..' . '/core/event/EventImporter.php',
         'Eventin\\Event\\EventProvider' => __DIR__ . '/../..' . '/core/event/EventProvider.php',
+        'Eventin\\Event\\EventTagExporter' => __DIR__ . '/../..' . '/core/event/EventTagExporter.php',
+        'Eventin\\Event\\EventTagImporter' => __DIR__ . '/../..' . '/core/event/EventTagImporter.php',
         'Eventin\\Event\\EventTemplate' => __DIR__ . '/../..' . '/core/event/EventTemplate.php',
         'Eventin\\Event\\MeetingPlatforms\\MeetingPlatform' => __DIR__ . '/../..' . '/core/event/MeetingPlatforms/MeetingPlatform.php',
         'Eventin\\Eventin' => __DIR__ . '/../..' . '/base/Eventin.php',
@@ -307,10 +313,12 @@ class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
         'Eventin\\Upgrade\\Upgraders\\V_4_0_29' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_29.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_33' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_33.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_4' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_4.php',
+        'Eventin\\Upgrade\\Upgraders\\V_4_0_50' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_50.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_6' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_6.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_7' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_7.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_8' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_8.php',
         'Eventin\\Upgrade\\Upgraders\\V_4_0_9' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_0_9.php',
+        'Eventin\\Upgrade\\Upgraders\\V_4_1_2' => __DIR__ . '/../..' . '/core/Upgrade/Upgraders/V_4_1_2.php',
         'Eventin\\Utils\\Banner\\Banner' => __DIR__ . '/../..' . '/utils/banner/banner.php',
         'Eventin\\Utils\\Notice\\Notice' => __DIR__ . '/../..' . '/utils/notice/Notice.php',
         'Eventin\\Utils\\Rating\\Rating' => __DIR__ . '/../..' . '/utils/rating/Rating.php',
@@ -332,9 +340,9 @@ class ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit6dbfe272e73eedcbffcaf50c2b35ac63::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit51060d1ef7b9244f23975c06b5e403b1::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit51060d1ef7b9244f23975c06b5e403b1::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit51060d1ef7b9244f23975c06b5e403b1::$classMap;
 
         }, null, ClassLoader::class);
     }

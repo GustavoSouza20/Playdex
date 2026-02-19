@@ -311,13 +311,16 @@ class Admin {
 
 	function themeover_connection_url($email, $proxy = false, $prefix = ''){
 
-		$test_domain = false;
+		$domain = $this->home_url;
 
-		$domain =  $test_domain ? $test_domain : $this->home_url;
-
-		$base_url = ($proxy) //|| 1 // to force proxy
+		$base_url = ($proxy)
 			? 'https://validate.themeover.com/'
 			: 'https://themeover.com/wp-content/tvr-auto-update/validate.php';
+
+        /*$test_endpoint = 'https://themeover-updated.test/';
+        if ($test_endpoint && TVR_DEV_MODE){
+            $base_url = $test_endpoint;
+        }*/
 
 		$params = $prefix . 'email='.rawurlencode($email)
 		          .'&domain='.$domain
@@ -325,7 +328,6 @@ class Admin {
 
 		 //Get local URL
         //$this->show_me = $base_url . '?' . $params;
-       // return 'https://themeover.test/wp-content/tvr-auto-update/validate.php'.'?'.$params;
 
 		return $base_url.'?'.$params;
 
@@ -348,7 +350,7 @@ class Admin {
 				'Accept' => 'application/json',
 				'User-Agent' => 'WordPress/' . get_bloginfo('version') . '; ' . home_url(),
 			],
-			'timeout' => 15,
+			'timeout' => 15
 		]);
 
 		if (is_wp_error($response)) {
@@ -9895,10 +9897,10 @@ class Admin {
 	        <div class="amender-notice">
 	            <div class="amender-inspect-buttons">
 	                <div class="label">Amends: </div>
-	                <div class="amender-inspect-wrap">
-                        <div id="normal-amends-tab" class="amender-inspect-button active" data-mtc="mod.MThtml.inspectButtonClicked" data-view="normal" title="Apply amendments normally">normal</div>
-                        <div id="review-amends-tab" class="amender-inspect-button" data-mtc="mod.MThtml.inspectButtonClicked" data-view="data" title="Review page amendments">review</div>
-                        <div id="no-amends-tab" class="amender-inspect-button" data-mtc="mod.MThtml.inspectButtonClicked" data-view="none" title="View page without amendments">none</div>
+	                <div class="amender-inspect-wrap tvr-multi-buttons">
+                        <div id="normal-amends-tab" class="tvr-multi-button amender-inspect-button active" data-mtc="mod.MThtml.inspectButtonClicked" data-view="normal" title="Apply amendments normally">normal</div>
+                        <div id="review-amends-tab" class="tvr-multi-button amender-inspect-button" data-mtc="mod.MThtml.inspectButtonClicked" data-view="data" title="Review page amendments">review</div>
+                        <div id="no-amends-tab" class="tvr-multi-button amender-inspect-button" data-mtc="mod.MThtml.inspectButtonClicked" data-view="none" title="View page without amendments">none</div>
 	                </div>
 	                '.$this->iconFont('sync-alt', array(
                         'class' => 'html-content-refresh',

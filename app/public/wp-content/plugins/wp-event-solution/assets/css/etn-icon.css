@@ -4,24 +4,26 @@
  * example ".etn-icon.fa-google::before{}"
 */
 @font-face {
-	font-family: etn-icon;
+	font-family: 'etn-icon';
 	src: url("../fonts/etn-icon.ttf?k9yrwb") format("truetype"),
-		url("../fonts/etn-icon.woff?k9yrwb") format("woff"),
-		url("../fonts/etn-icon.svg?k9yrwb#etn-icon") format("svg");
-	font-weight: 400;
+	     url("../fonts/etn-icon.woff?k9yrwb") format("woff"),
+	     url("../fonts/etn-icon.svg?k9yrwb#etn-icon") format("svg");
+	font-weight: normal;
 	font-style: normal;
-	font-display: block;
+	font-display: swap;
 }
 .etn-icon {
-	font-family: etn-icon !important;
-	speak: never;
+	font-family: 'etn-icon' !important;
 	font-style: normal;
-	font-weight: 400;
+	font-weight: normal;
 	font-variant: normal;
 	text-transform: none;
 	line-height: 1;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+.etn-etn-icon::before {
+    display: none;
 }
 .etn-angle-down:before {
 	content: "\e928";

@@ -592,12 +592,12 @@ class Extension {
                 'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/integration/zoom-meeting-2/?utm_source=documentations&utm_medium=eventin&utm_campaign=eventin+documentations',
                 'data'          => [
                     'etn_zoom_api'  =>  etn_get_option('etn_zoom_api') ? 'yes' : 'no',
-                    'zoom_authorize_url' => etn_get_option('zoom_authorize_url'),
+                    'zoom_authorize_url' => !empty(etn_get_option('zoom_authorize_url')) ? etn_get_option('zoom_authorize_url') : '',
                     'zoom_connected' => empty(etn_get_option('zoom_token')) ? 'no' : 'yes',
-                    'zoom_redirect_url' => etn_get_option('zoom_redirect_url'),
-                    'zoom_client_id' => etn_get_option('zoom_client_id'),
-                    'zoom_client_secret' => etn_get_option('zoom_client_secret'),
-                    'zoom_token' => etn_get_option('zoom_token')
+                    'zoom_redirect_url' => home_url().'/eventin-integration/zoom-auth',
+                    'zoom_client_id' => !empty(etn_get_option('zoom_client_id')) ? etn_get_option('zoom_client_id') : '',
+                    'zoom_client_secret' => !empty(etn_get_option('zoom_client_secret')) ? etn_get_option('zoom_client_secret') : '',
+                    'zoom_token' => !empty(etn_get_option('zoom_token')) ? etn_get_option('zoom_token') : ''
                 ]
             ],
             'google_meet' => [
@@ -615,11 +615,11 @@ class Extension {
                 'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/integration/google-meet/',
                 'data'          => [
                     'google_meet_connected' => empty(etn_get_option('google_token')) ? 'no' : 'yes',
-                    'google_meet_authorize_url' => etn_get_option('google_meet_authorize_url'),
-                    'google_meet_redirect_url' => etn_get_option('google_meet_redirect_url'),
+                    'google_meet_authorize_url' => !empty(etn_get_option('google_meet_authorize_url')) ? etn_get_option('google_meet_authorize_url') : '',
+                    'google_meet_redirect_url' => home_url().'/eventin-integration/google-auth',
                     'etn_meet_api' => etn_get_option('etn_meet_api') ? 'yes' : 'no',
-                    'google_meet_client_id' => etn_get_option('google_meet_client_id'),
-                    'google_meet_client_secret_key' => etn_get_option('google_meet_client_secret_key'),
+                    'google_meet_client_id' => !empty(etn_get_option('google_meet_client_id'))?etn_get_option('google_meet_client_id'):'',
+                    'google_meet_client_secret_key' => !empty(etn_get_option('google_meet_client_secret_key'))?etn_get_option('google_meet_client_secret_key'):'',
                 ]
             ],
             'google_map' => [
@@ -637,7 +637,7 @@ class Extension {
                 'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/event/event-location/?utm_source=documentations&utm_medium=eventin&utm_campaign=eventin+documentations',
                 'data'          => [
                     'etn_googlemap_api'  =>  etn_get_option('etn_googlemap_api') ? 'no' : 'yes',
-                    'google_api_key' => etn_get_option('google_api_key')
+                    'google_api_key' => !empty(etn_get_option('google_api_key')) ? etn_get_option('google_api_key') : ''
                 ]
             ],
             'eventin_ai' => [
@@ -653,12 +653,17 @@ class Extension {
                 'demo_link'     => 'https://product.themewinter.com/eventin/',
                 'settings_link' => '',
                 'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/integration/ai-integration/?utm_source=documentations&utm_medium=eventin&utm_campaign=eventin+documentations',
+                'data'          => [
+                    'eventin_ai' => etn_get_option('eventin_ai') ? etn_get_option('eventin_ai') : 'off',
+                    'eventin_ai_auth_key' => !empty(etn_get_option('eventin_ai_auth_key')) ? etn_get_option('eventin_ai_auth_key') : '',
+                    'etn_ai_api' => etn_get_option('etn_ai_api') ? etn_get_option('etn_ai_api') : 'off',
+                ]
             ],
         ];
 
-        $extensions['eventin-surecart-addon'] = [
-            'name'          => 'eventin-surecart-addon',
-            'slug'          => 'eventin-surecart-addon',
+        $extensions['eventin-addon-for-surecart'] = [
+            'name'          => 'eventin-addon-for-surecart',
+            'slug'          => 'eventin-addon-for-surecart',
             'type'          => 'addon',
             'status'        => 'off',
             'is_pro'        => false,
@@ -668,7 +673,7 @@ class Extension {
             'icon'          => ExtensionIcon::get('sure_cart'),
             'demo_link'     => 'https://product.themewinter.com/eventin/',
             'settings_link' => '',
-            'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/payment-type/how-to-configure-surecart-in-eventin/#how-to-connect-webhook',
+            'doc_link'      => 'https://support.themewinter.com/docs/plugins/plugin-docs/payment-type/how-to-configure-surecart-in-eventin',
             'notice'        => __('NB: Need to activate Surecart plugin', 'eventin'),
         ];
 

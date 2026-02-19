@@ -77,6 +77,9 @@ class FrontendAssets implements AssetsInterface {
             ],
             'etn-icon' => [
                 'src' => \Wpeventin::plugin_url( 'assets/css/etn-icon.css' )
+            ],
+            'etn-sf-pro-font' => [
+                'src' => \Wpeventin::plugin_url( 'assets/css/sf-pro-font.css' )
             ]
         ];
         

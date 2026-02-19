@@ -257,7 +257,7 @@ class HTML {
 	
 	function aspectIsAttribute($value){
 
-		if (in_array($value, HTML::$attributes, true)) {
+		if ($value === 'attributesString' || in_array($value, HTML::$attributes, true)) {
 			return true;
 		}
 
@@ -273,6 +273,11 @@ class HTML {
 	// To make undo operations manageable (on client side), wrap leading/trailing loose text with a tag
 	// This is done here for parity with frontend editing
 	function maybeWrapWithTag($content) {
+
+		// Allow for possibility $content is a node.
+		if (!is_string($content)) {
+			return $content;
+		}
 
 		$inlineElements = [
 			"span", "a", "strong", "em", "img", "br", "i", "b", "u", "small", "mark",
@@ -525,7 +530,7 @@ class HTML {
 
 						// remove attribute or set resolved attribute (for all other actions)
 						if ($action === 'remove'){
-							$node->removeAttribute($attName, $newValue);
+							$node->removeAttribute($attName);
 						} else {
 							$node->setAttribute($attName, $newValue);
 						}
