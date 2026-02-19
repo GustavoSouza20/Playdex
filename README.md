@@ -1,6 +1,8 @@
 # 🎮 Playdex
 
-![Capa do Projeto Playdex](docs/capa-playdex.jpg)
+![88eac8e8-a919-4e00-be91-1c6d11adc29a](https://github.com/user-attachments/assets/6bc2f2c8-67e1-4678-9732-632a2ac4584b)
+
+
 
 O **Playdex** é uma plataforma centralizada para a comunidade gamer, desenvolvida para simplificar, organizar e potencializar a experiência dos jogadores. O projeto funciona como um hub que une catálogo de jogos, notícias, eventos e interação via Inteligência Artificial, culminando em um funil de comunidade no Discord.
 
