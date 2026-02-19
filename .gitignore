@@ -1,0 +1,6 @@
+# Arquivos de configuracao do LocalWP
+/conf/
+/logs/
+
+# Uploads do WordPress (evita subir imagens pesadas pro GitHub)
+/app/public/wp-content/uploads/
