@@ -1,0 +1,17 @@
+.wp-block {} /*  (.wp-block {} ensures MT files load in Gutenberg editor) */
+
+/*  MICROTHEMER STYLES  */
+
+
+/*= Geral ===================== */
+
+/** Geral >> Breadcumbwrap **/
+#breadcumbwrap {
+	padding: 0 !important;
+}
+
+/** Geral >> Breadcumb wrapper **/
+.mtp-post-primeiras-imagens-oficiais .breadcumb-wrapper {
+	padding: 0 !important;
+}
+

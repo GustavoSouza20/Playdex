@@ -8,6 +8,11 @@
 	background-color: #0B0E13: !important;
 }
 
+/** Seja bem-vindo >> Breadcumbwrap **/
+#breadcumbwrap {
+	padding: 0 !important;
+}
+
 /** Seja bem-vindo >> Space top **/
 .wp-child-theme-bame-child .space-top {
 	color: #0B0E13 !important;
